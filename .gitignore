@@ -196,3 +196,7 @@ typings/
 /chromium-profile
 # direnv
 /.direnv
+
+# KJ
+deploy.sh
+gunicorn.sh
