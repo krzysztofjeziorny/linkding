@@ -40,11 +40,12 @@ The name comes from:
 - Automatically provides titles, descriptions and icons of bookmarked websites
 - Automatically creates snapshots of bookmarked websites on [the Internet Archive Wayback Machine](https://archive.org/web/)
 - Import and export bookmarks in Netscape HTML format
+- Installable as a Progressive Web App (PWA)
 - Extensions for [Firefox](https://addons.mozilla.org/firefox/addon/linkding-extension/) and [Chrome](https://chrome.google.com/webstore/detail/linkding-extension/beakmhbijpdhipnjhnclmhgjlddhidpe), as well as a bookmarklet
 - Light and dark themes
+- SSO support via OIDC or authentication proxies
 - REST API for developing 3rd party apps
 - Admin panel for user self-service and raw data access
-- Easy setup using Docker and a SQLite database, with PostgreSQL as an option
 
 
 **Demo:** https://demo.linkding.link/ ([see here](https://github.com/sissbruecker/linkding/issues/408) if you have trouble accessing it)
