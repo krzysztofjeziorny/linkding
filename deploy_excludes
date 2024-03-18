@@ -35,15 +35,13 @@ docs
 docker
 Gruntfile.js
 gulpfile.js
-local.py
 media
 migrations
 node_modules
-rollup.config.js
+rollup.config.mjs
 sass
 scss
 /siteroot/settings/dev.py
-/static
 svn
 svn/*.sh
 /static
