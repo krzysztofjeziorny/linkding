@@ -23,6 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env = environ.Env()
 env.read_env(str(BASE_DIR / ".env"))
 
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = env.bool("DEBUG")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -65,11 +68,17 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "siteroot.urls"
 
+default_loaders = [
+    "django.template.loaders.filesystem.Loader",
+    "django.template.loaders.app_directories.Loader",
+]
+cached_loaders = [("django.template.loaders.cached.Loader", default_loaders)]
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [],
-        "APP_DIRS": True,
+        "APP_DIRS": False,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -80,6 +89,7 @@ TEMPLATES = [
                 "bookmarks.context_processors.public_shares",
                 "bookmarks.context_processors.app_version",
             ],
+            "loaders": default_loaders if DEBUG else cached_loaders,
         },
     },
 ]
