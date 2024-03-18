@@ -96,7 +96,7 @@
           <div class="form-input-hint">
             Enabling this feature will automatically create snapshots of bookmarked websites on the <a
               href="https://web.archive.org/" target="_blank" rel="noopener">Internet Archive Wayback
-            Machine</a>.
+              Machine</a>.
             This allows to preserve, and later access the website as it was at the point in time it was bookmarked, in
             case it goes offline or its content is modified.
             Please consider donating to the <a href="https://archive.org/donate" target="_blank"
@@ -124,18 +124,18 @@
               href="{% url 'bookmarks:shared' %}">shared bookmarks page</a>.
           </div>
         </div>
-      <div class="form-group">
-        <details {% if form.custom_css.value %}open{% endif %}>
-          <summary>Custom CSS</summary>
-          <label for="{{ form.custom_css.id_for_label }}" class="text-assistive">Custom CSS</label>
-          <div class="mt-2">
-            {{ form.custom_css|add_class:"form-input custom-css"|attr:"rows:6" }}
+        <div class="form-group">
+          <details {% if form.custom_css.value %}open{% endif %}>
+            <summary>Custom CSS</summary>
+            <label for="{{ form.custom_css.id_for_label }}" class="text-assistive">Custom CSS</label>
+            <div class="mt-2">
+              {{ form.custom_css|add_class:"form-input custom-css"|attr:"rows:6" }}
+            </div>
+          </details>
+          <div class="form-input-hint">
+            Allows to add custom CSS to the page.
           </div>
-        </details>
-        <div class="form-input-hint">
-          Allows to add custom CSS to the page.
         </div>
-      </div>
         <div class="form-group">
           <input type="submit" name="update_profile" value="Save" class="btn btn-primary mt-2">
           {% if update_profile_success_message %}
@@ -214,23 +214,23 @@
       <h2>About</h2>
       <table class="table">
         <tbody>
-        <tr>
-          <td>Version</td>
-          <td>{{ version_info }}</td>
-        </tr>
-        <tr>
-          <td rowspan="3" style="vertical-align: top">Links</td>
-          <td><a href="https://github.com/sissbruecker/linkding/"
-                 target="_blank">GitHub</a></td>
-        </tr>
-        <tr>
-          <td><a href="https://github.com/sissbruecker/linkding#documentation"
-                 target="_blank">Documentation</a></td>
-        </tr>
-        <tr>
-          <td><a href="https://github.com/sissbruecker/linkding/blob/master/CHANGELOG.md"
-                 target="_blank">Changelog</a></td>
-        </tr>
+          <tr>
+            <td>Version</td>
+            <td>{{ version_info }}</td>
+          </tr>
+          <tr>
+            <td rowspan="3" style="vertical-align: top">Links</td>
+            <td><a href="https://github.com/sissbruecker/linkding/"
+                   target="_blank">GitHub</a></td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/sissbruecker/linkding#documentation"
+                   target="_blank">Documentation</a></td>
+          </tr>
+          <tr>
+            <td><a href="https://github.com/sissbruecker/linkding/blob/master/CHANGELOG.md"
+                   target="_blank">Changelog</a></td>
+          </tr>
         </tbody>
       </table>
     </section>
