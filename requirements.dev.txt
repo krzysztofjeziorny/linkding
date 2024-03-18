@@ -24,7 +24,7 @@ iniconfig==2.0.0
     # via pytest
 mypy-extensions==1.0.0
     # via black
-packaging==24.1
+packaging==24.0
     # via
     #   black
     #   pytest
