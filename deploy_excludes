@@ -2,6 +2,7 @@ __pycache__
 _sources
 ._*
 .DS_Store
+.editorconfig
 .env
 .env.*
 .git
@@ -23,6 +24,7 @@ _sources
 *.vim
 *.vscode
 *~
+/bookmarks/static/favicon.png
 data
 db.sqlite3
 deploy_excludes
@@ -37,8 +39,10 @@ local.py
 media
 migrations
 node_modules
+rollup.config.js
 sass
 scss
+/siteroot/settings/dev.py
 /static
 svn
 svn/*.sh
