@@ -21,8 +21,14 @@
             {% if bookmark_item.favicon_file and bookmark_list.show_favicons %}
               <img class="favicon" src="{% static bookmark_item.favicon_file %}" alt="">
             {% endif %}
-            <a href="{{ bookmark_item.url }}" target="{{ bookmark_list.link_target }}" rel="noopener">
-              <span>{{ bookmark_item.title }}</span>
+            <span>{{ bookmark_item.title }}</span>
+          </a>
+        </div>
+        {% if bookmark_list.show_url %}
+          <div class="url-path truncate">
+            <a href="{{ bookmark_item.url }}" target="{{ bookmark_list.link_target }}" rel="noopener"
+               class="url-display text-sm">
+              {{ bookmark_item.url }}
             </a>
           </div>
           {% if bookmark_list.show_url %}
