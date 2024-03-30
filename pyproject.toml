@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "linkding"
+version = "1.25.0"
+description = "linkding is a bookmark manager that you can host yourself."
+authors = ["Sascha Ißbrücker https://github.com/sissbruecker"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

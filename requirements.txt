@@ -12,7 +12,7 @@ bleach==6.1.0
     # via -r requirements.in
 bleach-allowlist==1.0.3
     # via -r requirements.in
-certifi==2023.11.17
+certifi==2024.2.2
     # via requests
 cffi==1.16.0
     # via cryptography
@@ -33,6 +33,7 @@ django==5.0.3
     #   django-registration
     #   djangorestframework
     #   mozilla-django-oidc
+django-environ==0.11.2
 django-registration==3.4
     # via -r requirements.in
 django-sass-processor==1.4
@@ -41,7 +42,7 @@ django-widget-tweaks==1.5.0
     # via -r requirements.in
 django4-background-tasks==1.2.9
     # via -r requirements.in
-djangorestframework==3.14.0
+djangorestframework==3.15.0
     # via -r requirements.in
 idna==3.6
     # via requests
@@ -57,9 +58,9 @@ pycparser==2.21
     # via cffi
 pyopenssl==24.1.0
     # via josepy
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via -r requirements.in
-pytz==2023.3.post1
+pytz==2024.1
     # via djangorestframework
 requests==2.31.0
     # via
