@@ -278,6 +278,12 @@ class UserProfile(models.Model):
         (BOOKMARK_DATE_DISPLAY_ABSOLUTE, "Absolute"),
         (BOOKMARK_DATE_DISPLAY_HIDDEN, "Hidden"),
     ]
+    BOOKMARK_DESCRIPTION_DISPLAY_INLINE = "inline"
+    BOOKMARK_DESCRIPTION_DISPLAY_SEPARATE = "separate"
+    BOOKMARK_DESCRIPTION_DISPLAY_CHOICES = [
+        (BOOKMARK_DESCRIPTION_DISPLAY_INLINE, "Inline"),
+        (BOOKMARK_DESCRIPTION_DISPLAY_SEPARATE, "Separate"),
+    ]
     BOOKMARK_LINK_TARGET_BLANK = "_blank"
     BOOKMARK_LINK_TARGET_SELF = "_self"
     BOOKMARK_LINK_TARGET_CHOICES = [
@@ -308,6 +314,16 @@ class UserProfile(models.Model):
         blank=False,
         default=BOOKMARK_DATE_DISPLAY_RELATIVE,
     )
+    bookmark_description_display = models.CharField(
+        max_length=10,
+        choices=BOOKMARK_DESCRIPTION_DISPLAY_CHOICES,
+        blank=False,
+        default=BOOKMARK_DESCRIPTION_DISPLAY_INLINE,
+    )
+    bookmark_description_max_lines = models.IntegerField(
+        null=False,
+        default=1,
+    )
     bookmark_link_target = models.CharField(
         max_length=10,
         choices=BOOKMARK_LINK_TARGET_CHOICES,
@@ -330,6 +346,10 @@ class UserProfile(models.Model):
     enable_public_sharing = models.BooleanField(default=False, null=False)
     enable_favicons = models.BooleanField(default=False, null=False)
     display_url = models.BooleanField(default=False, null=False)
+    display_view_bookmark_action = models.BooleanField(default=True, null=False)
+    display_edit_bookmark_action = models.BooleanField(default=True, null=False)
+    display_archive_bookmark_action = models.BooleanField(default=True, null=False)
+    display_remove_bookmark_action = models.BooleanField(default=True, null=False)
     permanent_notes = models.BooleanField(default=False, null=False)
     custom_css = models.TextField(blank=True, null=False)
     search_preferences = models.JSONField(default=dict, null=False)
@@ -341,6 +361,8 @@ class UserProfileForm(forms.ModelForm):
         fields = [
             "theme",
             "bookmark_date_display",
+            "bookmark_description_display",
+            "bookmark_description_max_lines",
             "bookmark_link_target",
             "web_archive_integration",
             "tag_search",
@@ -348,6 +370,10 @@ class UserProfileForm(forms.ModelForm):
             "enable_public_sharing",
             "enable_favicons",
             "display_url",
+            "display_view_bookmark_action",
+            "display_edit_bookmark_action",
+            "display_archive_bookmark_action",
+            "display_remove_bookmark_action",
             "permanent_notes",
             "custom_css",
         ]

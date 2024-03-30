@@ -24,6 +24,8 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
         form_data = {
             "theme": UserProfile.THEME_AUTO,
             "bookmark_date_display": UserProfile.BOOKMARK_DATE_DISPLAY_RELATIVE,
+            "bookmark_description_display": UserProfile.BOOKMARK_DESCRIPTION_DISPLAY_INLINE,
+            "bookmark_description_max_lines": 1,
             "bookmark_link_target": UserProfile.BOOKMARK_LINK_TARGET_BLANK,
             "web_archive_integration": UserProfile.WEB_ARCHIVE_INTEGRATION_DISABLED,
             "enable_sharing": False,
@@ -31,6 +33,10 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             "enable_favicons": False,
             "tag_search": UserProfile.TAG_SEARCH_STRICT,
             "display_url": False,
+            "display_view_bookmark_action": True,
+            "display_edit_bookmark_action": True,
+            "display_archive_bookmark_action": True,
+            "display_remove_bookmark_action": True,
             "permanent_notes": False,
             "custom_css": "",
         }
@@ -56,6 +62,8 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             "update_profile": "",
             "theme": UserProfile.THEME_DARK,
             "bookmark_date_display": UserProfile.BOOKMARK_DATE_DISPLAY_HIDDEN,
+            "bookmark_description_display": UserProfile.BOOKMARK_DESCRIPTION_DISPLAY_SEPARATE,
+            "bookmark_description_max_lines": 3,
             "bookmark_link_target": UserProfile.BOOKMARK_LINK_TARGET_SELF,
             "web_archive_integration": UserProfile.WEB_ARCHIVE_INTEGRATION_ENABLED,
             "enable_sharing": True,
@@ -63,6 +71,10 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             "enable_favicons": True,
             "tag_search": UserProfile.TAG_SEARCH_LAX,
             "display_url": True,
+            "display_view_bookmark_action": False,
+            "display_edit_bookmark_action": False,
+            "display_archive_bookmark_action": False,
+            "display_remove_bookmark_action": False,
             "permanent_notes": True,
             "custom_css": "body { background-color: #000; }",
         }
@@ -75,6 +87,14 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
         self.assertEqual(self.user.profile.theme, form_data["theme"])
         self.assertEqual(
             self.user.profile.bookmark_date_display, form_data["bookmark_date_display"]
+        )
+        self.assertEqual(
+            self.user.profile.bookmark_description_display,
+            form_data["bookmark_description_display"],
+        )
+        self.assertEqual(
+            self.user.profile.bookmark_description_max_lines,
+            form_data["bookmark_description_max_lines"],
         )
         self.assertEqual(
             self.user.profile.bookmark_link_target, form_data["bookmark_link_target"]
@@ -92,6 +112,22 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
         )
         self.assertEqual(self.user.profile.tag_search, form_data["tag_search"])
         self.assertEqual(self.user.profile.display_url, form_data["display_url"])
+        self.assertEqual(
+            self.user.profile.display_view_bookmark_action,
+            form_data["display_view_bookmark_action"],
+        )
+        self.assertEqual(
+            self.user.profile.display_edit_bookmark_action,
+            form_data["display_edit_bookmark_action"],
+        )
+        self.assertEqual(
+            self.user.profile.display_archive_bookmark_action,
+            form_data["display_archive_bookmark_action"],
+        )
+        self.assertEqual(
+            self.user.profile.display_remove_bookmark_action,
+            form_data["display_remove_bookmark_action"],
+        )
         self.assertEqual(
             self.user.profile.permanent_notes, form_data["permanent_notes"]
         )
