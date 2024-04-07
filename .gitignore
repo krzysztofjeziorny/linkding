@@ -191,3 +191,7 @@ typings/
 /tmp
 # Database file
 /data
+
+# KJ
+deploy.sh
+gunicorn.sh
