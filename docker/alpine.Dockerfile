@@ -31,7 +31,8 @@ RUN pip install -U pip && pip install -r requirements.txt -r requirements.dev.tx
 COPY . .
 COPY --from=node-build /etc/linkding .
 # run Django part of the build
-RUN python manage.py compilescss && \
+RUN mkdir data && \
+    python manage.py compilescss && \
     python manage.py collectstatic --ignore=*.scss && \
     python manage.py compilescss --delete-files
 
@@ -99,7 +100,9 @@ CMD ["./bootstrap.sh"]
 
 
 FROM linkding AS linkding-plus
-# install node, chromium and single-file
-RUN apk update && apk add nodejs npm chromium && npm install -g single-file-cli
+# install node, chromium
+RUN apk update && apk add nodejs npm chromium
+# install single-file from fork for now, which contains several hotfixes
+RUN npm install -g https://github.com/sissbruecker/single-file-cli/tarball/f3730995a52f27d5041a1ad9e7528af4b6b4cf4b
 # enable snapshot support
 ENV LD_ENABLE_SNAPSHOTS=True
