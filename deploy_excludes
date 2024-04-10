@@ -36,7 +36,7 @@ docker
 Gruntfile.js
 gulpfile.js
 media
-migrations
+migrations/*
 node_modules
 rollup.config.mjs
 sass
