@@ -21,7 +21,7 @@ python manage.py create_initial_superuser
 # Migrate legacy background tasks to Huey
 python manage.py migrate_tasks
 
-# Ensure the DB folder is owned by the right user
+# Ensure folders are owned by the right user
 chown -R www-data: /etc/linkding/data
 
 # Start background task processor using supervisord, unless explicitly disabled

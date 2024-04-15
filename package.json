@@ -1,6 +1,6 @@
 {
   "name": "linkding",
-  "version": "1.28.0",
+  "version": "1.29.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -28,5 +28,6 @@
   },
   "devDependencies": {
     "prettier": "^3.0.2"
-  }
+  },
+  "web-types": "./web-types.json"
 }
