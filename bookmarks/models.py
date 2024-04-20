@@ -91,6 +91,7 @@ class Bookmark(models.Model):
 
 class BookmarkAsset(models.Model):
     TYPE_SNAPSHOT = "snapshot"
+    TYPE_UPLOAD = "upload"
 
     CONTENT_TYPE_HTML = "text/html"
 
@@ -117,6 +118,9 @@ class BookmarkAsset(models.Model):
             except Exception:
                 pass
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.display_name or f"Bookmark Asset #{self.pk}"
 
 
 @receiver(post_delete, sender=BookmarkAsset)
@@ -399,6 +403,7 @@ class UserProfile(models.Model):
     custom_css = models.TextField(blank=True, null=False)
     search_preferences = models.JSONField(default=dict, null=False)
     enable_automatic_html_snapshots = models.BooleanField(default=True, null=False)
+    default_mark_unread = models.BooleanField(default=False, null=False)
 
 
 class UserProfileForm(forms.ModelForm):
@@ -422,6 +427,7 @@ class UserProfileForm(forms.ModelForm):
             "display_archive_bookmark_action",
             "display_remove_bookmark_action",
             "permanent_notes",
+            "default_mark_unread",
             "custom_css",
         ]
 

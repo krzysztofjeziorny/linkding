@@ -1,12 +1,13 @@
 import re
 from unittest.mock import patch
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import formats
 
 from bookmarks.models import BookmarkAsset, UserProfile
-from bookmarks.services import tasks
+from bookmarks.services import bookmarks, tasks
 from bookmarks.tests.helpers import BookmarkFactoryMixin, HtmlTestMixin
 
 
@@ -45,6 +46,9 @@ class BookmarkDetailsModalTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin
 
     def find_weblink(self, soup, url):
         return soup.find("a", {"class": "weblink", "href": url})
+
+    def count_weblinks(self, soup):
+        return len(soup.find_all("a", {"class": "weblink"}))
 
     def find_asset(self, soup, asset):
         return soup.find("div", {"data-asset-id": asset.id})
@@ -172,6 +176,48 @@ class BookmarkDetailsModalTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin
         self.assertIsNotNone(image)
         self.assertEqual(image["src"], "/static/example.png")
 
+    def test_reader_mode_link(self):
+        # no latest snapshot
+        bookmark = self.setup_bookmark()
+        soup = self.get_details(bookmark)
+        self.assertEqual(self.count_weblinks(soup), 1)
+
+        # snapshot is not complete
+        self.setup_asset(
+            bookmark,
+            asset_type=BookmarkAsset.TYPE_SNAPSHOT,
+            status=BookmarkAsset.STATUS_PENDING,
+        )
+        self.setup_asset(
+            bookmark,
+            asset_type=BookmarkAsset.TYPE_SNAPSHOT,
+            status=BookmarkAsset.STATUS_FAILURE,
+        )
+        soup = self.get_details(bookmark)
+        self.assertEqual(self.count_weblinks(soup), 1)
+
+        # not a snapshot
+        self.setup_asset(
+            bookmark,
+            asset_type="upload",
+            status=BookmarkAsset.STATUS_COMPLETE,
+        )
+        soup = self.get_details(bookmark)
+        self.assertEqual(self.count_weblinks(soup), 1)
+
+        # snapshot is complete
+        asset = self.setup_asset(
+            bookmark,
+            asset_type=BookmarkAsset.TYPE_SNAPSHOT,
+            status=BookmarkAsset.STATUS_COMPLETE,
+        )
+        soup = self.get_details(bookmark)
+        self.assertEqual(self.count_weblinks(soup), 2)
+
+        reader_mode_url = reverse("bookmarks:assets.read", args=[asset.id])
+        link = self.find_weblink(soup, reader_mode_url)
+        self.assertIsNotNone(link)
+
     def test_internet_archive_link(self):
         # without snapshot url
         bookmark = self.setup_bookmark()
@@ -185,7 +231,7 @@ class BookmarkDetailsModalTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin
         link = self.find_weblink(soup, bookmark.web_archive_snapshot_url)
         self.assertIsNotNone(link)
         self.assertEqual(link["href"], bookmark.web_archive_snapshot_url)
-        self.assertEqual(link.text.strip(), "View on Internet Archive")
+        self.assertEqual(link.text.strip(), "Internet Archive")
 
         # favicons disabled
         bookmark = self.setup_bookmark(
@@ -817,3 +863,34 @@ class BookmarkDetailsModalTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin
             "button", string=re.compile("Create HTML snapshot")
         )
         self.assertTrue(create_button.has_attr("disabled"))
+
+    def test_upload_file(self):
+        bookmark = self.setup_bookmark()
+        file_content = b"file content"
+        upload_file = SimpleUploadedFile("test.txt", file_content)
+
+        with patch.object(bookmarks, "upload_asset") as mock_upload_asset:
+            response = self.client.post(
+                self.get_base_url(bookmark),
+                {"upload_asset": "", "upload_asset_file": upload_file},
+            )
+            self.assertEqual(response.status_code, 302)
+
+            mock_upload_asset.assert_called_once()
+
+            args, kwargs = mock_upload_asset.call_args
+            self.assertEqual(args[0], bookmark)
+
+            upload_file = args[1]
+            self.assertEqual(upload_file.name, "test.txt")
+
+    def test_upload_file_without_file(self):
+        bookmark = self.setup_bookmark()
+
+        with patch.object(bookmarks, "upload_asset") as mock_upload_asset:
+            response = self.client.post(
+                self.get_base_url(bookmark),
+                {"upload_asset": ""},
+            )
+            self.assertEqual(response.status_code, 400)
+            mock_upload_asset.assert_not_called()
