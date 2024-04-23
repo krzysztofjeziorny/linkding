@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "linkding"
-version = "1.25.0"
+version = "1.30.0"
 description = "linkding is a bookmark manager that you can host yourself."
 authors = ["Sascha Ißbrücker https://github.com/sissbruecker"]
 license = "MIT"
