@@ -12,7 +12,7 @@ bleach==6.1.0
     # via -r requirements.in
 bleach-allowlist==1.0.3
     # via -r requirements.in
-certifi==2024.2.2
+certifi==2024.6.2
     # via requests
 cffi==1.17.1
     # via cryptography
@@ -22,7 +22,13 @@ click==8.1.7
     # via waybackpy
 confusable-homoglyphs==3.3.1
     # via django-registration
+<<<<<<< HEAD
 cryptography==43.0.1
+||||||| parent of 6032ba7 (pip updates)
+cryptography==42.0.5
+=======
+cryptography==42.0.8
+>>>>>>> 6032ba7 (pip updates)
     # via
     #   josepy
     #   mozilla-django-oidc
@@ -34,19 +40,50 @@ django==5.0.6
     #   djangorestframework
     #   mozilla-django-oidc
 django-environ==0.11.2
+    # via -r requirements.in
 django-registration==3.4
     # via -r requirements.in
+<<<<<<< HEAD
+||||||| parent of 6032ba7 (pip updates)
+django-sass-processor==1.4
+    # via -r requirements.in
+=======
+django-sass-processor==1.4.1
+    # via -r requirements.in
+>>>>>>> 6032ba7 (pip updates)
 django-widget-tweaks==1.5.0
     # via -r requirements.in
+<<<<<<< HEAD
 djangorestframework==3.15.2
     # via -r requirements.in
 djangorestframework==3.15.0
+||||||| parent of 6032ba7 (pip updates)
+djangorestframework==3.15.0
+=======
+djangorestframework==3.15.1
+>>>>>>> 6032ba7 (pip updates)
     # via -r requirements.in
+<<<<<<< HEAD
 idna==3.10
+||||||| parent of 6032ba7 (pip updates)
+huey==2.5.0
+    # via -r requirements.in
+idna==3.7
+=======
+huey==2.5.1
+    # via -r requirements.in
+idna==3.7
+>>>>>>> 6032ba7 (pip updates)
     # via requests
 josepy==1.14.0
     # via mozilla-django-oidc
+<<<<<<< HEAD
 markdown==3.7
+||||||| parent of 6032ba7 (pip updates)
+markdown==3.5.2
+=======
+markdown==3.6
+>>>>>>> 6032ba7 (pip updates)
     # via -r requirements.in
 mozilla-django-oidc==4.0.1
     # via -r requirements.in
@@ -58,9 +95,7 @@ pyopenssl==24.2.1
     # via josepy
 python-dateutil==2.9.0.post0
     # via -r requirements.in
-pytz==2024.1
-    # via djangorestframework
-requests==2.31.0
+requests==2.32.3
     # via
     #   -r requirements.in
     #   mozilla-django-oidc
@@ -75,11 +110,23 @@ sqlparse==0.5.1
     # via django
 supervisor==4.2.5
     # via -r requirements.in
+<<<<<<< HEAD
 urllib3==2.2.3
+||||||| parent of 6032ba7 (pip updates)
+urllib3==2.1.0
+=======
+urllib3==2.2.1
+>>>>>>> 6032ba7 (pip updates)
     # via
     #   requests
     #   waybackpy
+<<<<<<< HEAD
 uwsgi==2.0.28
+||||||| parent of 6032ba7 (pip updates)
+uwsgi==2.0.23
+=======
+uwsgi==2.0.26
+>>>>>>> 6032ba7 (pip updates)
     # via -r requirements.in
 waybackpy==3.0.6
     # via -r requirements.in
