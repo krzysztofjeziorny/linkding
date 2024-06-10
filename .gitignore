@@ -194,6 +194,7 @@ typings/
 # ublock + chromium
 /uBlock0.chromium
 /chromium-profile
+/.direnv
 
 # KJ
 deploy.sh

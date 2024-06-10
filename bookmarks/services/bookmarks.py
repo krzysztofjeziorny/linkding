@@ -10,6 +10,7 @@ from django.utils import timezone
 from bookmarks.models import Bookmark, BookmarkAsset, parse_tag_string
 from bookmarks.services import tasks
 from bookmarks.services import website_loader
+from bookmarks.services import auto_tagging
 from bookmarks.services.tags import get_or_create_tags
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,8 @@ def create_bookmark(bookmark: Bookmark, tag_string: str, current_user: User):
     tasks.create_web_archive_snapshot(current_user, bookmark, False)
     # Load favicon
     tasks.load_favicon(current_user, bookmark)
+    # Load preview image
+    tasks.load_preview_image(current_user, bookmark)
     # Create HTML snapshot
     if current_user.profile.enable_automatic_html_snapshots:
         tasks.create_html_snapshot(bookmark)
@@ -58,6 +61,8 @@ def update_bookmark(bookmark: Bookmark, tag_string, current_user: User):
     bookmark.save()
     # Update favicon
     tasks.load_favicon(current_user, bookmark)
+    # Update preview image
+    tasks.load_preview_image(current_user, bookmark)
 
     if has_url_changed:
         # Update web archive snapshot, if URL changed
@@ -238,6 +243,15 @@ def _update_website_metadata(bookmark: Bookmark):
 
 def _update_bookmark_tags(bookmark: Bookmark, tag_string: str, user: User):
     tag_names = parse_tag_string(tag_string)
+
+    if user.profile.auto_tagging_rules:
+        auto_tag_names = auto_tagging.get_tags(
+            user.profile.auto_tagging_rules, bookmark.url
+        )
+        for auto_tag_name in auto_tag_names:
+            if auto_tag_name not in tag_names:
+                tag_names.append(auto_tag_name)
+
     tags = get_or_create_tags(tag_names, user)
     bookmark.tags.set(tags)
 

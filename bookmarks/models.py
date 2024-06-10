@@ -59,6 +59,7 @@ class Bookmark(models.Model):
     website_description = models.TextField(blank=True, null=True)
     web_archive_snapshot_url = models.CharField(max_length=2048, blank=True)
     favicon_file = models.CharField(max_length=512, blank=True)
+    preview_image_file = models.CharField(max_length=512, blank=True)
     unread = models.BooleanField(default=False)
     is_archived = models.BooleanField(default=False)
     shared = models.BooleanField(default=False)
@@ -351,6 +352,12 @@ class UserProfile(models.Model):
         (TAG_SEARCH_STRICT, "Strict"),
         (TAG_SEARCH_LAX, "Lax"),
     ]
+    TAG_GROUPING_ALPHABETICAL = "alphabetical"
+    TAG_GROUPING_DISABLED = "disabled"
+    TAG_GROUPING_CHOICES = [
+        (TAG_GROUPING_ALPHABETICAL, "Alphabetical"),
+        (TAG_GROUPING_DISABLED, "Disabled"),
+    ]
     user = models.OneToOneField(
         get_user_model(), related_name="profile", on_delete=models.CASCADE
     )
@@ -391,9 +398,16 @@ class UserProfile(models.Model):
         blank=False,
         default=TAG_SEARCH_STRICT,
     )
+    tag_grouping = models.CharField(
+        max_length=12,
+        choices=TAG_GROUPING_CHOICES,
+        blank=False,
+        default=TAG_GROUPING_ALPHABETICAL,
+    )
     enable_sharing = models.BooleanField(default=False, null=False)
     enable_public_sharing = models.BooleanField(default=False, null=False)
     enable_favicons = models.BooleanField(default=False, null=False)
+    enable_preview_images = models.BooleanField(default=False, null=False)
     display_url = models.BooleanField(default=False, null=False)
     display_view_bookmark_action = models.BooleanField(default=True, null=False)
     display_edit_bookmark_action = models.BooleanField(default=True, null=False)
@@ -401,6 +415,7 @@ class UserProfile(models.Model):
     display_remove_bookmark_action = models.BooleanField(default=True, null=False)
     permanent_notes = models.BooleanField(default=False, null=False)
     custom_css = models.TextField(blank=True, null=False)
+    auto_tagging_rules = models.TextField(blank=True, null=False)
     search_preferences = models.JSONField(default=dict, null=False)
     enable_automatic_html_snapshots = models.BooleanField(default=True, null=False)
     default_mark_unread = models.BooleanField(default=False, null=False)
@@ -417,9 +432,11 @@ class UserProfileForm(forms.ModelForm):
             "bookmark_link_target",
             "web_archive_integration",
             "tag_search",
+            "tag_grouping",
             "enable_sharing",
             "enable_public_sharing",
             "enable_favicons",
+            "enable_preview_images",
             "enable_automatic_html_snapshots",
             "display_url",
             "display_view_bookmark_action",
@@ -429,6 +446,7 @@ class UserProfileForm(forms.ModelForm):
             "permanent_notes",
             "default_mark_unread",
             "custom_css",
+            "auto_tagging_rules",
         ]
 
 

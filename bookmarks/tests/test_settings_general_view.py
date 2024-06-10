@@ -31,8 +31,10 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             "enable_sharing": False,
             "enable_public_sharing": False,
             "enable_favicons": False,
+            "enable_preview_images": False,
             "enable_automatic_html_snapshots": True,
             "tag_search": UserProfile.TAG_SEARCH_STRICT,
+            "tag_grouping": UserProfile.TAG_GROUPING_ALPHABETICAL,
             "display_url": False,
             "display_view_bookmark_action": True,
             "display_edit_bookmark_action": True,
@@ -40,6 +42,7 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             "display_remove_bookmark_action": True,
             "permanent_notes": False,
             "custom_css": "",
+            "auto_tagging_rules": "",
         }
 
         return {**form_data, **overrides}
@@ -88,8 +91,10 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             "enable_sharing": True,
             "enable_public_sharing": True,
             "enable_favicons": True,
+            "enable_preview_images": True,
             "enable_automatic_html_snapshots": False,
             "tag_search": UserProfile.TAG_SEARCH_LAX,
+            "tag_grouping": UserProfile.TAG_GROUPING_DISABLED,
             "display_url": True,
             "display_view_bookmark_action": False,
             "display_edit_bookmark_action": False,
@@ -98,6 +103,7 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             "permanent_notes": True,
             "default_mark_unread": True,
             "custom_css": "body { background-color: #000; }",
+            "auto_tagging_rules": "example.com tag",
         }
         response = self.client.post(reverse("bookmarks:settings.general"), form_data)
         html = response.content.decode()
@@ -132,10 +138,14 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             self.user.profile.enable_favicons, form_data["enable_favicons"]
         )
         self.assertEqual(
+            self.user.profile.enable_preview_images, form_data["enable_preview_images"]
+        )
+        self.assertEqual(
             self.user.profile.enable_automatic_html_snapshots,
             form_data["enable_automatic_html_snapshots"],
         )
         self.assertEqual(self.user.profile.tag_search, form_data["tag_search"])
+        self.assertEqual(self.user.profile.tag_grouping, form_data["tag_grouping"])
         self.assertEqual(self.user.profile.display_url, form_data["display_url"])
         self.assertEqual(
             self.user.profile.display_view_bookmark_action,
@@ -160,6 +170,9 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             self.user.profile.default_mark_unread, form_data["default_mark_unread"]
         )
         self.assertEqual(self.user.profile.custom_css, form_data["custom_css"])
+        self.assertEqual(
+            self.user.profile.auto_tagging_rules, form_data["auto_tagging_rules"]
+        )
         self.assertSuccessMessage(html, "Profile updated")
 
     def test_update_profile_should_not_be_called_without_respective_form_action(self):
@@ -290,6 +303,39 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             html,
             count=0,
         )
+
+    def test_enable_preview_image_should_schedule_preview_update(self):
+        with patch.object(
+            tasks, "schedule_bookmarks_without_previews"
+        ) as mock_schedule_bookmarks_without_previews:
+            # Enabling favicons schedules update
+            form_data = self.create_profile_form_data(
+                {
+                    "update_profile": "",
+                    "enable_preview_images": True,
+                }
+            )
+            self.client.post(reverse("bookmarks:settings.general"), form_data)
+
+            mock_schedule_bookmarks_without_previews.assert_called_once_with(self.user)
+
+            # No update scheduled if favicons are already enabled
+            mock_schedule_bookmarks_without_previews.reset_mock()
+
+            self.client.post(reverse("bookmarks:settings.general"), form_data)
+
+            mock_schedule_bookmarks_without_previews.assert_not_called()
+
+            # No update scheduled when disabling favicons
+            form_data = self.create_profile_form_data(
+                {
+                    "enable_preview_images": False,
+                }
+            )
+
+            self.client.post(reverse("bookmarks:settings.general"), form_data)
+
+            mock_schedule_bookmarks_without_previews.assert_not_called()
 
     def test_automatic_html_snapshots_should_be_hidden_when_snapshots_not_supported(
         self,

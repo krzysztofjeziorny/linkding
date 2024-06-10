@@ -74,11 +74,18 @@ class BookmarkTasksTestCase(TestCase, BookmarkFactoryMixin):
             self.mock_singlefile_create_snapshot_patcher.start()
         )
 
+        self.mock_load_preview_image_patcher = mock.patch(
+            "bookmarks.services.preview_image_loader.load_preview_image"
+        )
+        self.mock_load_preview_image = self.mock_load_preview_image_patcher.start()
+        self.mock_load_preview_image.return_value = "preview_image.png"
+
         user = self.get_or_create_test_user()
         user.profile.web_archive_integration = (
             UserProfile.WEB_ARCHIVE_INTEGRATION_ENABLED
         )
         user.profile.enable_favicons = True
+        user.profile.enable_preview_images = True
         user.profile.save()
 
     def tearDown(self):
@@ -86,6 +93,7 @@ class BookmarkTasksTestCase(TestCase, BookmarkFactoryMixin):
         self.mock_cdx_api_patcher.stop()
         self.mock_load_favicon_patcher.stop()
         self.mock_singlefile_create_snapshot_patcher.stop()
+        self.mock_load_preview_image_patcher.stop()
         huey.storage.flush_results()
         huey.immediate = False
 
@@ -504,6 +512,136 @@ class BookmarkTasksTestCase(TestCase, BookmarkFactoryMixin):
 
         self.setup_bookmark()
         tasks.schedule_refresh_favicons(self.get_or_create_test_user())
+
+        self.assertEqual(self.executed_count(), 0)
+
+    def test_load_preview_image_should_create_preview_image_file(self):
+        bookmark = self.setup_bookmark()
+
+        tasks.load_preview_image(self.get_or_create_test_user(), bookmark)
+        bookmark.refresh_from_db()
+
+        self.assertEqual(self.executed_count(), 1)
+        self.assertEqual(bookmark.preview_image_file, "preview_image.png")
+
+    def test_load_preview_image_should_update_preview_image_file(self):
+        bookmark = self.setup_bookmark(
+            preview_image_file="preview_image.png",
+        )
+
+        self.mock_load_preview_image.return_value = "preview_image_upd.png"
+
+        tasks.load_preview_image(self.get_or_create_test_user(), bookmark)
+
+        bookmark.refresh_from_db()
+        self.mock_load_preview_image.assert_called_once()
+        self.assertEqual(bookmark.preview_image_file, "preview_image_upd.png")
+
+    def test_load_preview_image_should_set_blank_when_none_is_returned(self):
+        bookmark = self.setup_bookmark(
+            preview_image_file="preview_image.png",
+        )
+
+        self.mock_load_preview_image.return_value = None
+
+        tasks.load_preview_image(self.get_or_create_test_user(), bookmark)
+
+        bookmark.refresh_from_db()
+        self.mock_load_preview_image.assert_called_once()
+        self.assertEqual(bookmark.preview_image_file, "")
+
+    def test_load_preview_image_should_handle_missing_bookmark(self):
+        tasks._load_preview_image_task(123)
+
+        self.mock_load_preview_image.assert_not_called()
+
+    def test_load_preview_image_should_not_save_stale_bookmark_data(self):
+        bookmark = self.setup_bookmark()
+
+        # update bookmark during API call to check that saving
+        # the image does not overwrite updated bookmark data
+        def mock_load_preview_image_impl(url):
+            bookmark.title = "Updated title"
+            bookmark.save()
+            return "test.png"
+
+        self.mock_load_preview_image.side_effect = mock_load_preview_image_impl
+
+        tasks.load_preview_image(self.get_or_create_test_user(), bookmark)
+        bookmark.refresh_from_db()
+
+        self.assertEqual(bookmark.title, "Updated title")
+        self.assertEqual(bookmark.preview_image_file, "test.png")
+
+    @override_settings(LD_DISABLE_BACKGROUND_TASKS=True)
+    def test_load_preview_image_should_not_run_when_background_tasks_are_disabled(self):
+        bookmark = self.setup_bookmark()
+        tasks.load_preview_image(self.get_or_create_test_user(), bookmark)
+
+        self.assertEqual(self.executed_count(), 0)
+
+    def test_load_preview_image_should_not_run_when_preview_image_feature_is_disabled(
+        self,
+    ):
+        self.user.profile.enable_preview_images = False
+        self.user.profile.save()
+
+        bookmark = self.setup_bookmark()
+        tasks.load_preview_image(self.get_or_create_test_user(), bookmark)
+
+        self.assertEqual(self.executed_count(), 0)
+
+    def test_schedule_bookmarks_without_previews_should_load_preview_for_all_bookmarks_without_preview(
+        self,
+    ):
+        user = self.get_or_create_test_user()
+        self.setup_bookmark()
+        self.setup_bookmark()
+        self.setup_bookmark()
+        self.setup_bookmark(preview_image_file="test.png")
+        self.setup_bookmark(preview_image_file="test.png")
+        self.setup_bookmark(preview_image_file="test.png")
+
+        tasks.schedule_bookmarks_without_previews(user)
+
+        self.assertEqual(self.executed_count(), 4)
+        self.assertEqual(self.mock_load_preview_image.call_count, 3)
+
+    def test_schedule_bookmarks_without_previews_should_only_update_user_owned_bookmarks(
+        self,
+    ):
+        user = self.get_or_create_test_user()
+        other_user = User.objects.create_user(
+            "otheruser", "otheruser@example.com", "password123"
+        )
+        self.setup_bookmark()
+        self.setup_bookmark()
+        self.setup_bookmark()
+        self.setup_bookmark(user=other_user)
+        self.setup_bookmark(user=other_user)
+        self.setup_bookmark(user=other_user)
+
+        tasks.schedule_bookmarks_without_previews(user)
+
+        self.assertEqual(self.mock_load_preview_image.call_count, 3)
+
+    @override_settings(LD_DISABLE_BACKGROUND_TASKS=True)
+    def test_schedule_bookmarks_without_previews_should_not_run_when_background_tasks_are_disabled(
+        self,
+    ):
+        self.setup_bookmark()
+        tasks.schedule_bookmarks_without_previews(self.get_or_create_test_user())
+
+        self.assertEqual(self.executed_count(), 0)
+
+    def test_schedule_bookmarks_without_previews_should_not_run_when_preview_feature_is_disabled(
+        self,
+    ):
+        self.user.profile.enable_preview_images = False
+        self.user.profile.save()
+
+        self.setup_bookmark()
+        tasks.schedule_bookmarks_without_previews(self.get_or_create_test_user())
 
         self.assertEqual(self.executed_count(), 0)
 

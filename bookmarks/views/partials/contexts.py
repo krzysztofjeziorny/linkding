@@ -145,6 +145,7 @@ class BookmarkItem:
         self.tag_names = bookmark.tag_names
         self.web_archive_snapshot_url = bookmark.web_archive_snapshot_url
         self.favicon_file = bookmark.favicon_file
+        self.preview_image_file = bookmark.preview_image_file
         self.is_archived = bookmark.is_archived
         self.unread = bookmark.unread
         self.owner = bookmark.owner
@@ -215,6 +216,7 @@ class BookmarkListContext:
         self.show_archive_action = user_profile.display_archive_bookmark_action
         self.show_remove_action = user_profile.display_remove_bookmark_action
         self.show_favicons = user_profile.enable_favicons
+        self.show_preview_images = user_profile.enable_preview_images
         self.show_notes = user_profile.permanent_notes
 
     @staticmethod
@@ -262,7 +264,16 @@ class TagGroup:
         return f"<{self.char} TagGroup>"
 
     @staticmethod
-    def create_tag_groups(tags: Set[Tag]):
+    def create_tag_groups(mode: str, tags: Set[Tag]):
+        if mode == UserProfile.TAG_GROUPING_ALPHABETICAL:
+            return TagGroup._create_tag_groups_alphabetical(tags)
+        elif mode == UserProfile.TAG_GROUPING_DISABLED:
+            return TagGroup._create_tag_groups_disabled(tags)
+        else:
+            raise ValueError(f"{mode} is not a valid tag grouping mode")
+
+    @staticmethod
+    def _create_tag_groups_alphabetical(tags: Set[Tag]):
         # Ensure groups, as well as tags within groups, are ordered alphabetically
         sorted_tags = sorted(tags, key=lambda x: str.lower(x.name))
         group = None
@@ -287,6 +298,18 @@ class TagGroup:
             groups.append(cjk_group)
         return groups
 
+    @staticmethod
+    def _create_tag_groups_disabled(tags: Set[Tag]):
+        if len(tags) == 0:
+            return []
+
+        sorted_tags = sorted(tags, key=lambda x: str.lower(x.name))
+        group = TagGroup("Ungrouped")
+        for tag in sorted_tags:
+            group.tags.append(tag)
+
+        return [group]
+
 
 class TagCloudContext:
     request_context = RequestContext
@@ -309,7 +332,7 @@ class TagCloudContext:
         )
         has_selected_tags = len(unique_selected_tags) > 0
         unselected_tags = set(unique_tags).symmetric_difference(unique_selected_tags)
-        groups = TagGroup.create_tag_groups(unselected_tags)
+        groups = TagGroup.create_tag_groups(user_profile.tag_grouping, unselected_tags)
 
         self.tags = unique_tags
         self.groups = groups
@@ -384,6 +407,7 @@ class BookmarkDetailsContext:
         self.profile = request.user_profile
         self.is_editable = bookmark.owner == user
         self.sharing_enabled = user_profile.enable_sharing
+        self.preview_image_enabled = user_profile.enable_preview_images
         self.show_link_icons = user_profile.enable_favicons and bookmark.favicon_file
         # For now hide files section if snapshots are not supported
         self.show_files = settings.LD_ENABLE_SNAPSHOTS
