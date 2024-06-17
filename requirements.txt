@@ -61,6 +61,8 @@ pyopenssl==24.1.0
     # via josepy
 python-dateutil==2.9.0.post0
     # via -r requirements.in
+pytz==2023.3.post1
+    # via djangorestframework
 requests==2.32.3
     # via
     #   -r requirements.in
