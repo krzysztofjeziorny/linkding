@@ -25,13 +25,27 @@
     "@hotwired/turbo": "^8.0.6",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
+<<<<<<< HEAD
     "@rollup/wasm-node": "^4.16.4",
     "rollup-plugin-svelte": "^7.2.0",
+||||||| parent of 2ce8e63 (npm updates)
+    "@rollup/wasm-node": "^4.18.0",
+    "rollup-plugin-svelte": "^7.2.2",
+=======
+    "@rollup/wasm-node": "^4.18.1",
+    "rollup-plugin-svelte": "^7.2.2",
+>>>>>>> 2ce8e63 (npm updates)
     "spectre.css": "^0.5.9",
     "svelte": "^4.2.15"
   },
   "devDependencies": {
+<<<<<<< HEAD
     "prettier": "^3.2.5"
+||||||| parent of 2ce8e63 (npm updates)
+    "prettier": "^3.3.1"
+=======
+    "prettier": "^3.3.2"
+>>>>>>> 2ce8e63 (npm updates)
   },
   "web-types": "./web-types.json"
 }
