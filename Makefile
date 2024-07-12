@@ -1,4 +1,4 @@
-.PHONY: serve
+.PHONY: serve install
 
 serve:
 	python manage.py runserver
@@ -13,3 +13,6 @@ format:
 	black bookmarks
 	black siteroot
 	npx prettier bookmarks/frontend --write
+
+install:
+	.venv/bin/pip install -r requirements.txt --upgrade
