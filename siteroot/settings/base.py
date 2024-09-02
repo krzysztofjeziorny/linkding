@@ -13,21 +13,29 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import json
 import os
 import shlex
+from email.utils import getaddresses
+from pathlib import Path
+import environ
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Set the project base directory
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "kgq$h3@!!vbb6*nzfz(dbze=*)zsroqa8gvc0#1gx$3cd8z99^"
+# Take environment variables from .env file
+env = environ.Env()
+env.read_env(str(BASE_DIR / ".env"))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = env.bool("DEBUG")
 
-ALLOWED_HOSTS = ["*"]
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+
+SECRET_KEY = env("DJANGO_SECRET_KEY")
+ADMINS = getaddresses([env("DJANGO_ADMINS")])
+EMAIL_SUBJECT_PREFIX = env("DJANGO_EMAIL_SUBJECT_PREFIX")
+SERVER_EMAIL = env("DJANGO_SERVER_EMAIL")
+DEFAULT_FROM_EMAIL = env("DJANGO_SERVER_EMAIL")
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS")
 
 # Application definition
 
@@ -61,11 +69,17 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "siteroot.urls"
 
+default_loaders = [
+    "django.template.loaders.filesystem.Loader",
+    "django.template.loaders.app_directories.Loader",
+]
+cached_loaders = [("django.template.loaders.cached.Loader", default_loaders)]
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [],
-        "APP_DIRS": True,
+        "APP_DIRS": False,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -75,6 +89,7 @@ TEMPLATES = [
                 "bookmarks.context_processors.toasts",
                 "bookmarks.context_processors.app_version",
             ],
+            "loaders": default_loaders if DEBUG else cached_loaders,
         },
     },
 ]
@@ -113,7 +128,7 @@ LOGOUT_REDIRECT_URL = "/" + LD_CONTEXT_PATH + "login"
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = os.getenv("TZ", "UTC")
+TIME_ZONE = "Europe/Vienna"
 
 USE_I18N = True
 
@@ -248,32 +263,13 @@ LD_DB_PASSWORD = os.getenv("LD_DB_PASSWORD", None)
 LD_DB_PORT = os.getenv("LD_DB_PORT", None)
 LD_DB_OPTIONS = json.loads(os.getenv("LD_DB_OPTIONS") or "{}")
 
-if LD_DB_ENGINE == "postgres":
-    default_database = {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": LD_DB_DATABASE,
-        "USER": LD_DB_USER,
-        "PASSWORD": LD_DB_PASSWORD,
-        "HOST": LD_DB_HOST,
-        "PORT": LD_DB_PORT,
-        "OPTIONS": LD_DB_OPTIONS,
-    }
-else:
-    default_database = {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "data", "db.sqlite3"),
-        "OPTIONS": LD_DB_OPTIONS,
-        # Creating a connection loads the ICU extension into the SQLite
-        # connection, and also loads an ICU collation. The latter causes a
-        # memory leak, so try to counter that by making connections indefinitely
-        # persistent.
-        "CONN_MAX_AGE": None,
-    }
-
-DATABASES = {"default": default_database}
+# Database
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+DATABASES = {"default": env.db("DJANGO_DATABASE_URL")}
+USE_SQLITE_ICU_EXTENSION = False
 
 SQLITE_ICU_EXTENSION_PATH = "./libicu.so"
-USE_SQLITE = default_database["ENGINE"] == "django.db.backends.sqlite3"
+USE_SQLITE = "django.db.backends.sqlite3"
 USE_SQLITE_ICU_EXTENSION = USE_SQLITE and os.path.exists(SQLITE_ICU_EXTENSION_PATH)
 
 # Favicons
