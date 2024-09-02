@@ -36,14 +36,11 @@ docker
 Gruntfile.js
 gulpfile.js
 media
-migrations/*
 node_modules
 rollup.config.mjs
 sass
 scss
 /siteroot/settings/dev.py
-svn
-svn/*.sh
 /static
 tmp
 vim
