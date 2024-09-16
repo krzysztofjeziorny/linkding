@@ -4,16 +4,22 @@ class BulkEdit extends Behavior {
   constructor(element) {
     super(element);
 
-    this.active = false;
+    this.active = element.classList.contains("active");
 
+    this.init = this.init.bind(this);
     this.onToggleActive = this.onToggleActive.bind(this);
     this.onToggleAll = this.onToggleAll.bind(this);
     this.onToggleBookmark = this.onToggleBookmark.bind(this);
     this.onActionSelected = this.onActionSelected.bind(this);
 
     this.init();
-    // Reset when bookmarks are refreshed
-    document.addEventListener("refresh-bookmark-list-done", () => this.init());
+    // Reset when bookmarks are updated
+    document.addEventListener("bookmark-list-updated", this.init);
+  }
+
+  destroy() {
+    this.removeListeners();
+    document.removeEventListener("bookmark-list-updated", this.init);
   }
 
   init() {
@@ -31,13 +37,9 @@ class BulkEdit extends Behavior {
       this.element.querySelectorAll(".bulk-edit-checkbox:not(.all) input"),
     );
 
-    // Remove previous listeners if elements are the same
-    this.activeToggle.removeEventListener("click", this.onToggleActive);
-    this.actionSelect.removeEventListener("change", this.onActionSelected);
-    this.allCheckbox.removeEventListener("change", this.onToggleAll);
-    this.bookmarkCheckboxes.forEach((checkbox) => {
-      checkbox.removeEventListener("change", this.onToggleBookmark);
-    });
+    // Add listeners, ensure there are no dupes by possibly removing existing listeners
+    this.removeListeners();
+    this.addListeners();
 
     // Reset checkbox states
     this.reset();
@@ -47,13 +49,23 @@ class BulkEdit extends Behavior {
     const total = totalHolder?.dataset.bookmarksTotal || 0;
     const totalSpan = this.selectAcross.querySelector("span.total");
     totalSpan.textContent = total;
+  }
 
-    // Add new listeners
+  addListeners() {
     this.activeToggle.addEventListener("click", this.onToggleActive);
     this.actionSelect.addEventListener("change", this.onActionSelected);
     this.allCheckbox.addEventListener("change", this.onToggleAll);
     this.bookmarkCheckboxes.forEach((checkbox) => {
       checkbox.addEventListener("change", this.onToggleBookmark);
+    });
+  }
+
+  removeListeners() {
+    this.activeToggle.removeEventListener("click", this.onToggleActive);
+    this.actionSelect.removeEventListener("change", this.onActionSelected);
+    this.allCheckbox.removeEventListener("change", this.onToggleAll);
+    this.bookmarkCheckboxes.forEach((checkbox) => {
+      checkbox.removeEventListener("change", this.onToggleBookmark);
     });
   }
 

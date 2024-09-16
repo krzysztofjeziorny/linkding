@@ -11,8 +11,6 @@ from .base import *
 
 # Turn of debug mode
 DEBUG = False
-# Turn off SASS compilation
-SASS_PROCESSOR_ENABLED = True
 
 # Try read secret key from file
 try:

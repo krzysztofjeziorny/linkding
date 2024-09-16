@@ -4,7 +4,6 @@ bleach-allowlist
 Django
 django-environ
 django-registration
-django-sass-processor
 django-widget-tweaks
 djangorestframework
 huey

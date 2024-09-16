@@ -5,10 +5,10 @@ from django.http import HttpResponse
 from django.template import Template, RequestContext
 from django.test import TestCase, RequestFactory
 
-from bookmarks.middlewares import UserProfileMiddleware
+from bookmarks.middlewares import LinkdingMiddleware
 from bookmarks.models import UserProfile
 from bookmarks.tests.helpers import BookmarkFactoryMixin, HtmlTestMixin
-from bookmarks.views.partials import contexts
+from bookmarks.views import contexts
 
 
 class TagCloudTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
@@ -21,7 +21,7 @@ class TagCloudTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         rf = RequestFactory()
         request = rf.get(url)
         request.user = user or self.get_or_create_test_user()
-        middleware = UserProfileMiddleware(lambda r: HttpResponse())
+        middleware = LinkdingMiddleware(lambda r: HttpResponse())
         middleware(request)
 
         tag_cloud_context = context_type(request)
@@ -203,13 +203,28 @@ class TagCloudTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         tag = self.setup_tag(name="tag1")
         self.setup_bookmark(tags=[tag], title="term1")
 
+        rendered_template = self.render_template(url="/test?q=term1&sort=title_asc")
+
+        self.assertInHTML(
+            """
+            <a href="?q=term1+%23tag1&sort=title_asc" class="mr-2" data-is-tag-item>
+              <span class="highlight-char">t</span><span>ag1</span>
+            </a>
+        """,
+            rendered_template,
+        )
+
+    def test_tag_url_removes_page_number_and_details_id(self):
+        tag = self.setup_tag(name="tag1")
+        self.setup_bookmark(tags=[tag], title="term1")
+
         rendered_template = self.render_template(
-            url="/test?q=term1&sort=title_asc&page=2"
+            url="/test?q=term1&sort=title_asc&page=2&details=5"
         )
 
         self.assertInHTML(
             """
-            <a href="?q=term1+%23tag1&sort=title_asc&page=2" class="mr-2" data-is-tag-item>
+            <a href="?q=term1+%23tag1&sort=title_asc" class="mr-2" data-is-tag-item>
               <span class="highlight-char">t</span><span>ag1</span>
             </a>
         """,
@@ -347,12 +362,30 @@ class TagCloudTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         self.setup_bookmark(tags=[tag], title="term1", description="term2")
 
         rendered_template = self.render_template(
-            url="/test?q=term1 %23tag1 term2&sort=title_asc&page=2"
+            url="/test?q=term1 %23tag1 term2&sort=title_asc"
         )
 
         self.assertInHTML(
             """
-            <a href="?q=term1+term2&sort=title_asc&page=2"
+            <a href="?q=term1+term2&sort=title_asc"
+               class="text-bold mr-2">
+                <span>-tag1</span>
+            </a>
+        """,
+            rendered_template,
+        )
+
+    def test_selected_tag_url_removes_page_number_and_details_id(self):
+        tag = self.setup_tag(name="tag1")
+        self.setup_bookmark(tags=[tag], title="term1", description="term2")
+
+        rendered_template = self.render_template(
+            url="/test?q=term1 %23tag1 term2&sort=title_asc&page=2&details=5"
+        )
+
+        self.assertInHTML(
+            """
+            <a href="?q=term1+term2&sort=title_asc"
                class="text-bold mr-2">
                 <span>-tag1</span>
             </a>

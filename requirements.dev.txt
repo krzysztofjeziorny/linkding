@@ -12,14 +12,7 @@ click==8.1.7
     # via black
 coverage==7.6.0
     # via -r requirements.dev.in
-django==5.0.8
-    # via
-    #   django-appconf
-    #   django-debug-toolbar
-django-appconf==1.0.6
-    # via django-compressor
-django-compressor==4.4
-    # via -r requirements.dev.in
+django==5.0.9
 django-debug-toolbar==4.4.6
     # via -r requirements.dev.in
 execnet==2.1.1
@@ -28,8 +21,6 @@ greenlet==3.0.3
     # via playwright
 iniconfig==2.0.0
     # via pytest
-libsass==0.23.0
-    # via -r requirements.dev.in
 mypy-extensions==1.0.0
     # via black
 packaging==24.1
@@ -55,10 +46,6 @@ pytest-django==4.8.0
     # via -r requirements.dev.in
 pytest-xdist==3.6.1
     # via -r requirements.dev.in
-rcssmin==1.1.1
-    # via django-compressor
-rjsmin==1.2.1
-    # via django-compressor
 sqlparse==0.5.0
     # via
     #   django

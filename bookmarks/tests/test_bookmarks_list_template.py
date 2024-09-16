@@ -9,10 +9,10 @@ from django.test import TestCase, RequestFactory
 from django.urls import reverse
 from django.utils import timezone, formats
 
-from bookmarks.middlewares import UserProfileMiddleware
+from bookmarks.middlewares import LinkdingMiddleware
 from bookmarks.models import Bookmark, UserProfile, User
 from bookmarks.tests.helpers import BookmarkFactoryMixin, HtmlTestMixin
-from bookmarks.views.partials import contexts
+from bookmarks.views import contexts
 
 
 class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
@@ -44,37 +44,32 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
             f"""
         <a href="{url}"
            title="Show snapshot on the Internet Archive Wayback Machine" target="{link_target}" rel="noopener">
-            {label_content} ∞
+            {label_content}
         </a>
         <span>|</span>
         """,
             html,
         )
 
-    def assertViewLink(
-        self, html: str, bookmark: Bookmark, return_url=reverse("bookmarks:index")
-    ):
-        self.assertViewLinkCount(html, bookmark, return_url=return_url)
+    def assertViewLink(self, html: str, bookmark: Bookmark, base_url=None):
+        self.assertViewLinkCount(html, bookmark, base_url)
 
-    def assertNoViewLink(
-        self, html: str, bookmark: Bookmark, return_url=reverse("bookmarks:index")
-    ):
-        self.assertViewLinkCount(html, bookmark, count=0, return_url=return_url)
+    def assertNoViewLink(self, html: str, bookmark: Bookmark, base_url=None):
+        self.assertViewLinkCount(html, bookmark, base_url, count=0)
 
     def assertViewLinkCount(
         self,
         html: str,
         bookmark: Bookmark,
+        base_url: str = None,
         count=1,
-        return_url=reverse("bookmarks:index"),
     ):
-        details_url = reverse("bookmarks:details", args=[bookmark.id])
-        details_modal_url = reverse("bookmarks:details_modal", args=[bookmark.id])
+        if base_url is None:
+            base_url = reverse("bookmarks:index")
+        details_url = base_url + f"?details={bookmark.id}"
         self.assertInHTML(
             f"""
-                <a ld-fetch="{details_modal_url}?return_url={return_url}" 
-                   ld-on="click" ld-target="body|append" 
-                   href="{details_url}">View</a>
+                <a href="{details_url}" data-turbo-action="replace" data-turbo-frame="details-modal">View</a>
             """,
             html,
             count=count,
@@ -203,7 +198,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
     def assertNotes(self, html: str, notes_html: str, count=1):
         self.assertInHTML(
             f"""
-        <div class="notes bg-gray text-gray-dark">
+        <div class="notes">
           <div class="markdown">
             {notes_html}
           </div>
@@ -270,7 +265,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         rf = RequestFactory()
         request = rf.get(url)
         request.user = user or self.get_or_create_test_user()
-        middleware = UserProfileMiddleware(lambda r: HttpResponse())
+        middleware = LinkdingMiddleware(lambda r: HttpResponse())
         middleware(request)
 
         bookmark_list_context = context_type(request)
@@ -651,7 +646,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         bookmark = self.setup_bookmark(user=other_user, shared=True)
         html = self.render_template(context_type=contexts.SharedBookmarkListContext)
 
-        self.assertViewLink(html, bookmark, return_url=reverse("bookmarks:shared"))
+        self.assertViewLink(html, bookmark, base_url=reverse("bookmarks:shared"))
         self.assertNoBookmarkActions(html, bookmark)
         self.assertShareInfo(html, bookmark)
 
@@ -943,7 +938,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         self.assertWebArchiveLink(
             html, "1 week ago", bookmark.web_archive_snapshot_url, link_target="_blank"
         )
-        self.assertViewLink(html, bookmark, return_url=reverse("bookmarks:shared"))
+        self.assertViewLink(html, bookmark, base_url=reverse("bookmarks:shared"))
         self.assertNoBookmarkActions(html, bookmark)
         self.assertShareInfo(html, bookmark)
         self.assertMarkAsReadButton(html, bookmark, count=0)
