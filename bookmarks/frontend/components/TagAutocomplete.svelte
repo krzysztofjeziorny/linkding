@@ -119,7 +119,7 @@
     <!-- menu list items -->
     {#each suggestions as tag,i}
       <li class="menu-item" class:selected={selectedIndex === i}>
-        <a href="#" on:mousedown|preventDefault={() => complete(tag)}>
+        <a href={'#'} on:mousedown|preventDefault={() => complete(tag)}>
           {tag.name}
         </a>
       </li>
