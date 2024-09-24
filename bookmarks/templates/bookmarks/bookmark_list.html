@@ -142,14 +142,20 @@
             {% endif %}
           </div>
         </div>
-        {% if bookmark_list.show_preview_images and bookmark_item.preview_image_file %}
-          <img class="preview-image" src="{% static bookmark_item.preview_image_file %}" loading="lazy"/>
+        {% if bookmark_list.show_preview_images %}
+          {% if bookmark_item.preview_image_file %}
+            <img class="preview-image" src="{% static bookmark_item.preview_image_file %}" loading="lazy"/>
+          {% else %}
+            <div class="preview-image placeholder">
+              <div class="img"/>
+            </div>
+          {% endif %}
         {% endif %}
       </li>
     {% endfor %}
   </ul>
 
-  <div class="bookmark-pagination">
+  <div class="bookmark-pagination{% if request.user_profile.sticky_pagination %} sticky{% endif %}">
     {% pagination bookmark_list.bookmarks_page %}
   </div>
 {% endif %}

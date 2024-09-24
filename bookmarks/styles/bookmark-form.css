@@ -6,30 +6,21 @@
 }
 
 .bookmarks-form {
-  & .btn.btn-link.form-icon {
-    padding: 0;
-    width: 20px;
-    height: 20px;
-    visibility: hidden;
-    --btn-icon-color: var(--tertiary-text-color);
-
-    & > svg {
-      width: 20px;
-      height: 20px;
-    }
-  }
-
-  & .has-icon-right > input, & .has-icon-right > textarea {
+  & .has-icon-right > input,
+  & .has-icon-right > textarea {
     padding-right: 30px;
-  }
-
-  & .has-icon-right > input:placeholder-shown ~ .btn.form-icon,
-  & .has-icon-right > textarea:placeholder-shown ~ .btn.form-icon {
-    visibility: visible;
   }
 
   & .form-icon.loading {
     visibility: hidden;
+  }
+
+  & .form-group .clear-button {
+    display: none;
+    padding: 0;
+    border: none;
+    height: auto;
+    font-size: var(--font-size-sm);
   }
 
   & .form-input-hint.bookmark-exists {

@@ -26,6 +26,11 @@ class BookmarkEditViewTestCase(TestCase, BookmarkFactoryMixin):
         }
         return {**form_data, **overrides}
 
+    def test_should_render_successfully(self):
+        bookmark = self.setup_bookmark()
+        response = self.client.get(reverse("bookmarks:edit", args=[bookmark.id]))
+        self.assertEqual(response.status_code, 200)
+
     def test_should_edit_bookmark(self):
         bookmark = self.setup_bookmark()
         form_data = self.create_form_data({"id": bookmark.id})
@@ -45,6 +50,14 @@ class BookmarkEditViewTestCase(TestCase, BookmarkFactoryMixin):
         tags = bookmark.tags.order_by("name").all()
         self.assertEqual(tags[0].name, "editedtag1")
         self.assertEqual(tags[1].name, "editedtag2")
+
+    def test_should_return_422_with_invalid_form(self):
+        bookmark = self.setup_bookmark()
+        form_data = self.create_form_data({"id": bookmark.id, "url": ""})
+        response = self.client.post(
+            reverse("bookmarks:edit", args=[bookmark.id]), form_data
+        )
+        self.assertEqual(response.status_code, 422)
 
     def test_should_edit_unread_state(self):
         bookmark = self.setup_bookmark()
@@ -80,8 +93,6 @@ class BookmarkEditViewTestCase(TestCase, BookmarkFactoryMixin):
             title="edited title",
             description="edited description",
             notes="edited notes",
-            website_title="website title",
-            website_description="website description",
         )
 
         response = self.client.get(reverse("bookmarks:edit", args=[bookmark.id]))
@@ -114,7 +125,7 @@ class BookmarkEditViewTestCase(TestCase, BookmarkFactoryMixin):
 
         self.assertInHTML(
             f"""
-            <textarea name="description" cols="40" rows="2" class="form-input" id="id_description">
+            <textarea name="description" cols="40" rows="3" class="form-input" id="id_description">
                 {bookmark.description}
             </textarea>
         """,
@@ -130,21 +141,39 @@ class BookmarkEditViewTestCase(TestCase, BookmarkFactoryMixin):
             html,
         )
 
-        self.assertInHTML(
-            f"""
-            <input type="hidden" name="website_title"  id="id_website_title"
-                    value="{bookmark.website_title}">
-        """,
-            html,
+    def test_should_prevent_duplicate_urls(self):
+        edited_bookmark = self.setup_bookmark(url="http://example.com/edited")
+        existing_bookmark = self.setup_bookmark(url="http://example.com/existing")
+        other_user_bookmark = self.setup_bookmark(
+            url="http://example.com/other-user", user=User.objects.create_user("other")
         )
 
-        self.assertInHTML(
-            f"""
-            <input type="hidden" name="website_description"  id="id_website_description"
-                    value="{bookmark.website_description}">
-        """,
-            html,
+        # if the URL isn't modified it's not a duplicate
+        form_data = self.create_form_data({"url": edited_bookmark.url})
+        response = self.client.post(
+            reverse("bookmarks:edit", args=[edited_bookmark.id]), form_data
         )
+        self.assertEqual(response.status_code, 302)
+
+        # if the URL is already bookmarked by another user, it's not a duplicate
+        form_data = self.create_form_data({"url": other_user_bookmark.url})
+        response = self.client.post(
+            reverse("bookmarks:edit", args=[edited_bookmark.id]), form_data
+        )
+        self.assertEqual(response.status_code, 302)
+
+        # if the URL is already bookmarked by the same user, it's a duplicate
+        form_data = self.create_form_data({"url": existing_bookmark.url})
+        response = self.client.post(
+            reverse("bookmarks:edit", args=[edited_bookmark.id]), form_data
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertInHTML(
+            "<li>A bookmark with this URL already exists.</li>",
+            response.content.decode(),
+        )
+        edited_bookmark.refresh_from_db()
+        self.assertNotEqual(edited_bookmark.url, existing_bookmark.url)
 
     def test_should_redirect_to_return_url(self):
         bookmark = self.setup_bookmark()

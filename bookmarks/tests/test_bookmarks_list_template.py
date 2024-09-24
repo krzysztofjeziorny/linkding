@@ -171,6 +171,11 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         self.assertIsNotNone(preview_image)
         self.assertEqual(preview_image["src"], url)
 
+    def assertPreviewImagePlaceholder(self, html: str):
+        soup = self.make_soup(html)
+        placeholder = soup.select_one(".preview-image.placeholder")
+        self.assertIsNotNone(placeholder)
+
     def assertBookmarkURLCount(
         self, html: str, bookmark: Bookmark, link_target: str = "_blank", count=0
     ):
@@ -210,7 +215,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
 
     def assertNotesToggle(self, html: str, count=1):
         self.assertInHTML(
-            f"""
+            """
         <button type="button" class="btn btn-link btn-sm btn-icon toggle-notes">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">
             <use xlink:href="#ld-icon-note"></use>
@@ -314,7 +319,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
 
         # contains description text, without leading/trailing whitespace
         if has_description:
-            description_text = description.find("span", text=bookmark.description)
+            description_text = description.find("span", string=bookmark.description)
             self.assertIsNotNone(description_text)
 
         if not has_tags:
@@ -331,7 +336,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
             self.assertEqual(len(tag_links), len(bookmark.tags.all()))
 
             for tag in bookmark.tags.all():
-                tag_link = tags.find("a", text=f"#{tag.name}")
+                tag_link = tags.find("a", string=f"#{tag.name}")
                 self.assertIsNotNone(tag_link)
                 self.assertEqual(tag_link["href"], f"?q=%23{tag.name}")
 
@@ -400,7 +405,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
             self.assertEqual(len(tag_links), len(bookmark.tags.all()))
 
             for tag in bookmark.tags.all():
-                tag_link = tags.find("a", text=f"#{tag.name}")
+                tag_link = tags.find("a", string=f"#{tag.name}")
                 self.assertIsNotNone(tag_link)
                 self.assertEqual(tag_link["href"], f"?q=%23{tag.name}")
 
@@ -691,15 +696,15 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
 
         self.assertPreviewImageHidden(html, bookmark)
 
-    def test_preview_image_should_be_hidden_when_there_is_no_preview_image(self):
+    def test_preview_image_shows_placeholder_when_there_is_no_preview_image(self):
         profile = self.get_or_create_test_user().profile
         profile.enable_preview_images = True
         profile.save()
 
-        bookmark = self.setup_bookmark()
+        self.setup_bookmark()
         html = self.render_template()
 
-        self.assertPreviewImageHidden(html, bookmark)
+        self.assertPreviewImagePlaceholder(html)
 
     def test_favicon_should_be_visible_when_favicons_enabled(self):
         profile = self.get_or_create_test_user().profile
@@ -955,3 +960,37 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         self.assertInHTML(
             '<p class="empty-title h5">You have no bookmarks yet</p>', html
         )
+
+    def test_pagination_is_not_sticky_by_default(self):
+        self.setup_bookmark()
+        html = self.render_template()
+
+        self.assertIn('<div class="bookmark-pagination">', html)
+
+    def test_pagination_is_sticky_when_enabled_in_profile(self):
+        self.setup_bookmark()
+        profile = self.get_or_create_test_user().profile
+        profile.sticky_pagination = True
+        profile.save()
+        html = self.render_template()
+
+        self.assertIn('<div class="bookmark-pagination sticky">', html)
+
+    def test_items_per_page_is_30_by_default(self):
+        self.setup_numbered_bookmarks(50)
+        html = self.render_template()
+
+        soup = self.make_soup(html)
+        bookmarks = soup.select("li[ld-bookmark-item]")
+        self.assertEqual(30, len(bookmarks))
+
+    def test_items_per_page_is_configurable(self):
+        self.setup_numbered_bookmarks(50)
+        profile = self.get_or_create_test_user().profile
+        profile.items_per_page = 10
+        profile.save()
+        html = self.render_template()
+
+        soup = self.make_soup(html)
+        bookmarks = soup.select("li[ld-bookmark-item]")
+        self.assertEqual(10, len(bookmarks))

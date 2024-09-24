@@ -150,16 +150,8 @@ class BookmarkDetailsModalTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin
         self.assertIsNotNone(title)
         self.assertEqual(title.text.strip(), bookmark.title)
 
-        # with website title
-        bookmark = self.setup_bookmark(title="", website_title="Website title")
-        soup = self.get_index_details_modal(bookmark)
-
-        title = soup.find("h2")
-        self.assertIsNotNone(title)
-        self.assertEqual(title.text.strip(), bookmark.website_title)
-
         # with URL only
-        bookmark = self.setup_bookmark(title="", website_title="")
+        bookmark = self.setup_bookmark(title="")
         soup = self.get_index_details_modal(bookmark)
 
         title = soup.find("h2")
@@ -478,7 +470,7 @@ class BookmarkDetailsModalTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin
 
     def test_description(self):
         # without description
-        bookmark = self.setup_bookmark(description="", website_description="")
+        bookmark = self.setup_bookmark(description="")
         soup = self.get_index_details_modal(bookmark)
 
         section = self.find_section(soup, "Description")
@@ -490,15 +482,6 @@ class BookmarkDetailsModalTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin
 
         section = self.get_section(soup, "Description")
         self.assertEqual(section.text.strip(), bookmark.description)
-
-        # with website description
-        bookmark = self.setup_bookmark(
-            description="", website_description="Website description"
-        )
-        soup = self.get_index_details_modal(bookmark)
-
-        section = self.get_section(soup, "Description")
-        self.assertEqual(section.text.strip(), bookmark.website_description)
 
     def test_notes(self):
         # without notes
@@ -522,8 +505,7 @@ class BookmarkDetailsModalTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin
         soup = self.get_index_details_modal(bookmark)
         edit_link = soup.find("a", string="Edit")
         self.assertIsNotNone(edit_link)
-        details_url = reverse("bookmarks:index") + f"?details={bookmark.id}"
-        expected_url = "/bookmarks/1/edit?return_url=/bookmarks%3Fdetails%3D1"
+        expected_url = f"/bookmarks/{bookmark.id}/edit?return_url=/bookmarks%3Fdetails%3D{bookmark.id}"
         self.assertEqual(expected_url, edit_link["href"])
 
     def test_delete_button(self):

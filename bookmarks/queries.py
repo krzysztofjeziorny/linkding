@@ -53,8 +53,6 @@ def _base_bookmarks_query(
             Q(title__icontains=term)
             | Q(description__icontains=term)
             | Q(notes__icontains=term)
-            | Q(website_title__icontains=term)
-            | Q(website_description__icontains=term)
             | Q(url__icontains=term)
         )
 
@@ -87,13 +85,7 @@ def _base_bookmarks_query(
     elif search.shared == BookmarkSearch.FILTER_SHARED_UNSHARED:
         query_set = query_set.filter(shared=False)
 
-    # Sort by date added
-    if search.sort == BookmarkSearch.SORT_ADDED_ASC:
-        query_set = query_set.order_by("date_added")
-    elif search.sort == BookmarkSearch.SORT_ADDED_DESC:
-        query_set = query_set.order_by("-date_added")
-
-    # Sort by title
+    # Sort
     if (
         search.sort == BookmarkSearch.SORT_TITLE_ASC
         or search.sort == BookmarkSearch.SORT_TITLE_DESC
@@ -103,10 +95,6 @@ def _base_bookmarks_query(
         query_set = query_set.annotate(
             effective_title=Case(
                 When(Q(title__isnull=False) & ~Q(title__exact=""), then=Lower("title")),
-                When(
-                    Q(website_title__isnull=False) & ~Q(website_title__exact=""),
-                    then=Lower("website_title"),
-                ),
                 default=Lower("url"),
                 output_field=CharField(),
             )
@@ -124,6 +112,11 @@ def _base_bookmarks_query(
             query_set = query_set.order_by(order_field)
         elif search.sort == BookmarkSearch.SORT_TITLE_DESC:
             query_set = query_set.order_by(order_field).reverse()
+    elif search.sort == BookmarkSearch.SORT_ADDED_ASC:
+        query_set = query_set.order_by("date_added")
+    else:
+        # Sort by date added, descending by default
+        query_set = query_set.order_by("-date_added")
 
     return query_set
 

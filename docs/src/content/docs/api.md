@@ -1,4 +1,7 @@
-# API
+---
+title: "API"
+description: "How to use the REST API of linkding"
+---
 
 The application provides a REST API that can be used by 3rd party applications to manage bookmarks.
 
@@ -46,8 +49,6 @@ Example response:
       "title": "Example title",
       "description": "Example description",
       "notes": "Example notes",
-      "website_title": "Website title",
-      "website_description": "Website description",
       "web_archive_snapshot_url": "https://web.archive.org/web/20200926094623/https://example.com",
       "favicon_url": "http://127.0.0.1:8000/static/https_example_com.png",
       "preview_image_url": "http://127.0.0.1:8000/static/0ac5c53db923727765216a3a58e70522.jpg",
@@ -84,6 +85,39 @@ GET /api/bookmarks/<id>/
 
 Retrieves a single bookmark by ID.
 
+**Check**
+
+```
+GET /api/bookmarks/check/?url=https%3A%2F%2Fexample.com
+```
+
+Allows to check if a URL is already bookmarked. If the URL is already bookmarked, the `bookmark` property in the response holds the bookmark data, otherwise it is `null`.
+
+Also returns a `metadata` property that contains metadata scraped from the website. Finally, the `auto_tags` property contains the tag names that would be automatically added when creating a bookmark for that URL.
+
+Example response:
+
+```json
+{
+  "bookmark": {
+    "id": 1,
+    "url": "https://example.com",
+    "title": "Example title",
+    "description": "Example description",
+    ...
+  },
+  "metadata": {
+    "title": "Scraped website title",
+    "description": "Scraped website description",
+    ...
+  },
+  "auto_tags": [
+    "tag1",
+    "tag2"
+  ]
+}
+```
+
 **Create**
 
 ```
@@ -92,6 +126,10 @@ POST /api/bookmarks/
 
 Creates a new bookmark. Tags are simply assigned using their names. Including
 `is_archived: true` saves a bookmark directly to the archive.
+
+If the provided URL is already bookmarked, this silently updates the existing bookmark instead of creating a new one. If you are implementing a user interface, consider notifying users about this behavior. You can use the `/check` endpoint to check if a URL is already bookmarked and at the same time get the existing bookmark data. This behavior may change in the future to return an error instead.
+
+If the title and description are not provided or empty, the application automatically tries to scrape them from the bookmarked website. This behavior can be disabled by adding the `disable_scraping` query parameter to the API request.
 
 Example payload:
 
@@ -115,35 +153,16 @@ Example payload:
 
 ```
 PUT /api/bookmarks/<id>/
-```
-
-Updates a bookmark.
-This is a full update, which requires at least a URL, and fields that are not specified are cleared or reset to their defaults.
-Tags are simply assigned using their names.
-
-Example payload:
-
-```json
-{
-  "url": "https://example.com",
-  "title": "Example title",
-  "description": "Example description",
-  "tag_names": [
-    "tag1",
-    "tag2"
-  ]
-}
-```
-
-**Patch**
-
-```
 PATCH /api/bookmarks/<id>/
 ```
 
-Updates a bookmark partially.
-Allows to modify individual fields of a bookmark.
+Updates a bookmark.
+When using `POST`, at least all required fields must be provided (currently only `url`).
+When using `PATCH`, only the fields that should be updated need to be provided.
+Regardless which method is used, any field that is not provided is not modified.
 Tags are simply assigned using their names.
+
+If the provided URL is already bookmarked this returns an error.
 
 Example payload:
 

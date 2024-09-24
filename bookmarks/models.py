@@ -1,12 +1,13 @@
+import binascii
 import logging
 import os
 from typing import List
 
-import binascii
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
@@ -55,7 +56,9 @@ class Bookmark(models.Model):
     title = models.CharField(max_length=512, blank=True)
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)
+    # Obsolete field, kept to not remove column when generating migrations
     website_title = models.CharField(max_length=512, blank=True, null=True)
+    # Obsolete field, kept to not remove column when generating migrations
     website_description = models.TextField(blank=True, null=True)
     web_archive_snapshot_url = models.CharField(max_length=2048, blank=True)
     favicon_file = models.CharField(max_length=512, blank=True)
@@ -73,14 +76,12 @@ class Bookmark(models.Model):
     def resolved_title(self):
         if self.title:
             return self.title
-        elif self.website_title:
-            return self.website_title
         else:
             return self.url
 
     @property
     def resolved_description(self):
-        return self.website_description if not self.description else self.description
+        return self.description
 
     @property
     def tag_names(self):
@@ -140,14 +141,9 @@ class BookmarkForm(forms.ModelForm):
     # Use URLField for URL
     url = forms.CharField(validators=[BookmarkURLValidator()])
     tag_string = forms.CharField(required=False)
-    # Do not require title and description in form as we fill these automatically if they are empty
+    # Do not require title and description as they may be empty
     title = forms.CharField(max_length=512, required=False)
     description = forms.CharField(required=False, widget=forms.Textarea())
-    # Include website title and description as hidden field as they only provide info when editing bookmarks
-    website_title = forms.CharField(
-        max_length=512, required=False, widget=forms.HiddenInput()
-    )
-    website_description = forms.CharField(required=False, widget=forms.HiddenInput())
     unread = forms.BooleanField(required=False)
     shared = forms.BooleanField(required=False)
     # Hidden field that determines whether to close window/tab after saving the bookmark
@@ -161,8 +157,6 @@ class BookmarkForm(forms.ModelForm):
             "title",
             "description",
             "notes",
-            "website_title",
-            "website_description",
             "unread",
             "shared",
             "auto_close",
@@ -173,6 +167,24 @@ class BookmarkForm(forms.ModelForm):
         return self.initial.get("notes", None) or (
             self.instance and self.instance.notes
         )
+
+    def clean_url(self):
+        # When creating a bookmark, the service logic prevents duplicate URLs by
+        # updating the existing bookmark instead, which is also communicated in
+        # the form's UI. When editing a bookmark, there is no assumption that
+        # it would update a different bookmark if the URL is a duplicate, so
+        # raise a validation error in that case.
+        url = self.cleaned_data["url"]
+        if self.instance.pk:
+            is_duplicate = (
+                Bookmark.objects.filter(owner=self.instance.owner, url=url)
+                .exclude(pk=self.instance.pk)
+                .exists()
+            )
+            if is_duplicate:
+                raise forms.ValidationError("A bookmark with this URL already exists.")
+
+        return url
 
 
 class BookmarkSearch:
@@ -422,6 +434,10 @@ class UserProfile(models.Model):
     search_preferences = models.JSONField(default=dict, null=False)
     enable_automatic_html_snapshots = models.BooleanField(default=True, null=False)
     default_mark_unread = models.BooleanField(default=False, null=False)
+    items_per_page = models.IntegerField(
+        null=False, default=30, validators=[MinValueValidator(10)]
+    )
+    sticky_pagination = models.BooleanField(default=False, null=False)
 
 
 class UserProfileForm(forms.ModelForm):
@@ -450,6 +466,8 @@ class UserProfileForm(forms.ModelForm):
             "default_mark_unread",
             "custom_css",
             "auto_tagging_rules",
+            "items_per_page",
+            "sticky_pagination",
         ]
 
 

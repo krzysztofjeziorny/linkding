@@ -22,6 +22,7 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
         if not overrides:
             overrides = {}
         form_data = {
+            "update_profile": "",
             "theme": UserProfile.THEME_AUTO,
             "bookmark_date_display": UserProfile.BOOKMARK_DATE_DISPLAY_RELATIVE,
             "bookmark_description_display": UserProfile.BOOKMARK_DESCRIPTION_DISPLAY_INLINE,
@@ -43,6 +44,8 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             "permanent_notes": False,
             "custom_css": "",
             "auto_tagging_rules": "",
+            "items_per_page": "30",
+            "sticky_pagination": False,
         }
 
         return {**form_data, **overrides}
@@ -111,6 +114,8 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             "default_mark_unread": True,
             "custom_css": "body { background-color: #000; }",
             "auto_tagging_rules": "example.com tag",
+            "items_per_page": "10",
+            "sticky_pagination": True,
         }
         response = self.client.post(
             reverse("bookmarks:settings.update"), form_data, follow=True
@@ -182,7 +187,20 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
         self.assertEqual(
             self.user.profile.auto_tagging_rules, form_data["auto_tagging_rules"]
         )
+        self.assertEqual(
+            self.user.profile.items_per_page, int(form_data["items_per_page"])
+        )
+        self.assertEqual(
+            self.user.profile.sticky_pagination, form_data["sticky_pagination"]
+        )
+
         self.assertSuccessMessage(html, "Profile updated")
+
+    def test_update_profile_with_invalid_form_returns_422(self):
+        form_data = self.create_profile_form_data({"items_per_page": "-1"})
+        response = self.client.post(reverse("bookmarks:settings.update"), form_data)
+
+        self.assertEqual(response.status_code, 422)
 
     def test_update_profile_should_not_be_called_without_respective_form_action(self):
         form_data = {
@@ -206,7 +224,6 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             # Enabling favicons schedules update
             form_data = self.create_profile_form_data(
                 {
-                    "update_profile": "",
                     "enable_favicons": True,
                 }
             )
@@ -320,7 +337,6 @@ class SettingsGeneralViewTestCase(TestCase, BookmarkFactoryMixin):
             # Enabling favicons schedules update
             form_data = self.create_profile_form_data(
                 {
-                    "update_profile": "",
                     "enable_preview_images": True,
                 }
             )

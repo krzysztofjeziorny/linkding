@@ -46,6 +46,11 @@ class BookmarkNewViewTestCase(TestCase, BookmarkFactoryMixin):
         self.assertEqual(tags[0].name, "tag1")
         self.assertEqual(tags[1].name, "tag2")
 
+    def test_should_return_422_with_invalid_form(self):
+        form_data = self.create_form_data({"url": ""})
+        response = self.client.post(reverse("bookmarks:new"), form_data)
+        self.assertEqual(response.status_code, 422)
+
     def test_should_create_new_unread_bookmark(self):
         form_data = self.create_form_data({"unread": True})
 
@@ -96,7 +101,7 @@ class BookmarkNewViewTestCase(TestCase, BookmarkFactoryMixin):
 
         self.assertInHTML(
             '<textarea name="description" class="form-input" cols="40" '
-            'rows="2" id="id_description">Example Site Description</textarea>',
+            'rows="3" id="id_description">Example Site Description</textarea>',
             html,
         )
 
@@ -115,6 +120,9 @@ class BookmarkNewViewTestCase(TestCase, BookmarkFactoryMixin):
                 </summary>
                 <label for="id_notes" class="text-assistive">Notes</label>
                 <textarea name="notes" cols="40" rows="8" class="form-input" id="id_notes">**Find** more info [here](http://example.com)</textarea>
+                <div class="form-input-hint">
+                    Additional notes, supports Markdown.
+                </div>
             </details>
             """,
             html,
