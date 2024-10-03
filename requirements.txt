@@ -33,6 +33,8 @@ django==5.1.1
     #   django-registration
     #   djangorestframework
     #   mozilla-django-oidc
+django-environ==0.11.2
+    # via -r requirements.in
 django-registration==3.4
     # via -r requirements.in
 django-widget-tweaks==1.5.0
