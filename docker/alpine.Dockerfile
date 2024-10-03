@@ -1,4 +1,4 @@
-FROM node:18-alpine AS node-build
+FROM node:20-alpine AS node-build
 WORKDIR /etc/linkding
 # install build dependencies
 COPY rollup.config.mjs postcss.config.js package.json package-lock.json ./
@@ -10,7 +10,7 @@ COPY bookmarks/styles ./bookmarks/styles
 RUN npm run build
 
 
-FROM python:3.12.6-alpine3.20 AS python-base
+FROM python:3.12.6-alpine3.20 AS build-deps
 # Add required packages
 # alpine-sdk linux-headers pkgconfig: build Python packages from source
 # libpq-dev: build Postgres client from source
@@ -18,24 +18,8 @@ FROM python:3.12.6-alpine3.20 AS python-base
 # libffi-dev openssl-dev rust cargo: build Python cryptography from source
 RUN apk update && apk add alpine-sdk linux-headers libpq-dev pkgconfig icu-dev sqlite-dev libffi-dev openssl-dev rust cargo
 WORKDIR /etc/linkding
-
-
-FROM python-base AS python-build
-# install build dependencies
+# install python dependencies
 COPY requirements.txt requirements.txt
-RUN pip install -U pip && pip install -r requirements.txt
-# copy files needed for Django build
-COPY . .
-COPY --from=node-build /etc/linkding .
-# remove style sources
-RUN rm -rf bookmarks/styles
-# run Django part of the build
-RUN mkdir data && \
-    python manage.py collectstatic
-
-
-FROM python-base AS prod-deps
-COPY requirements.txt ./requirements.txt
 # Need to build psycopg2 from source for ARM platforms
 RUN sed -i 's/psycopg2-binary/psycopg2/g' requirements.txt
 RUN mkdir /opt/venv && \
@@ -44,7 +28,7 @@ RUN mkdir /opt/venv && \
     /opt/venv/bin/pip install -r requirements.txt
 
 
-FROM python-base AS compile-icu
+FROM build-deps AS compile-icu
 # Defines SQLite version
 # Since this is only needed for downloading the header files this probably
 # doesn't need to be up-to-date, assuming the SQLite APIs used by the ICU
@@ -74,19 +58,23 @@ RUN set -x ; \
   addgroup -g 82 -S www-data ; \
   adduser -u 82 -D -S -G www-data www-data && exit 0 ; exit 1
 WORKDIR /etc/linkding
-# copy prod dependencies
-COPY --from=prod-deps /opt/venv /opt/venv
-# copy output from build stage
-COPY --from=python-build /etc/linkding/static static/
+# copy python dependencies
+COPY --from=build-deps /opt/venv /opt/venv
+# copy output from node build
+COPY --from=node-build /etc/linkding/bookmarks/static bookmarks/static/
 # copy compiled icu extension
 COPY --from=compile-icu /etc/linkding/libicu.so libicu.so
 # copy application code
 COPY . .
+# Activate virtual env
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH=/opt/venv/bin:$PATH
+# Generate static files, remove source styles that are not needed
+RUN mkdir data && \
+    python manage.py collectstatic
+
 # Expose uwsgi server at port 9090
 EXPOSE 9090
-# Activate virtual env
-ENV VIRTUAL_ENV /opt/venv
-ENV PATH /opt/venv/bin:$PATH
 # Allow running containers as an an arbitrary user in the root group, to support deployment scenarios like OpenShift, Podman
 RUN chmod g+w . && \
     chmod +x ./bootstrap.sh
@@ -100,18 +88,20 @@ CMD ["./bootstrap.sh"]
 FROM node:18-alpine AS ublock-build
 WORKDIR /etc/linkding
 # Install necessary tools
-RUN apk add --no-cache curl jq unzip
-# Fetch the latest release tag
-# Download the library
-# Unzip the library
-RUN TAG=$(curl -sL https://api.github.com/repos/gorhill/uBlock/releases/latest | jq -r '.tag_name') && \
-    DOWNLOAD_URL=https://github.com/gorhill/uBlock/releases/download/$TAG/uBlock0_$TAG.chromium.zip && \
-    curl -L -o uBlock0.zip $DOWNLOAD_URL && \
-    unzip uBlock0.zip
-# Patch assets.json to enable easylist-cookies by default
-RUN curl -L -o ./uBlock0.chromium/assets/thirdparties/easylist/easylist-cookies.txt https://ublockorigin.github.io/uAssets/thirdparties/easylist-cookies.txt
-RUN jq '."assets.json" |= del(.cdnURLs) | ."assets.json".contentURL = ["assets/assets.json"] | ."fanboy-cookiemonster" |= del(.off) | ."fanboy-cookiemonster".contentURL += ["assets/thirdparties/easylist/easylist-cookies.txt"]' ./uBlock0.chromium/assets/assets.json > temp.json && \
-    mv temp.json ./uBlock0.chromium/assets/assets.json
+# Download and unzip the latest uBlock Origin Lite release
+# Patch manifest to enable annoyances by default
+# Patch ruleset-manager.js to use rulesets enabled in manifest by default
+RUN apk add --no-cache curl jq unzip && \
+    TAG=$(curl -sL https://api.github.com/repos/uBlockOrigin/uBOL-home/releases/latest | jq -r '.tag_name') && \
+    DOWNLOAD_URL=https://github.com/uBlockOrigin/uBOL-home/releases/download/$TAG/$TAG.chromium.mv3.zip && \
+    echo "Downloading $DOWNLOAD_URL" && \
+    curl -L -o uBOLite.zip $DOWNLOAD_URL && \
+    unzip uBOLite.zip -d uBOLite.chromium.mv3 && \
+    rm uBOLite.zip && \
+    jq '.declarative_net_request.rule_resources |= map(if .id == "annoyances-overlays" or .id == "annoyances-cookies" or .id == "annoyances-social" or .id == "annoyances-widgets" or .id == "annoyances-others" then .enabled = true else . end)' \
+        uBOLite.chromium.mv3/manifest.json > temp.json && \
+    mv temp.json uBOLite.chromium.mv3/manifest.json && \
+    sed -i 's/const out = \[ '\''default'\'' \];/const out = await dnr.getEnabledRulesets();/' uBOLite.chromium.mv3/js/ruleset-manager.js
 
 
 FROM linkding AS linkding-plus
@@ -119,9 +109,11 @@ FROM linkding AS linkding-plus
 RUN apk update && apk add nodejs npm chromium
 # install single-file from fork for now, which contains several hotfixes
 RUN npm install -g https://github.com/sissbruecker/single-file-cli/tarball/4c54b3bc704cfb3e96cec2d24854caca3df0b3b6
-# copy uBlock0
-COPY --from=ublock-build /etc/linkding/uBlock0.chromium uBlock0.chromium/
-# create chromium profile folder for user running background tasks
-RUN mkdir -p chromium-profile && chown -R www-data:www-data chromium-profile
+# copy uBlock
+COPY --from=ublock-build /etc/linkding/uBOLite.chromium.mv3 uBOLite.chromium.mv3/
+# create chromium profile folder for user running background tasks and set permissions
+RUN mkdir -p chromium-profile &&  \
+    chown -R www-data:www-data chromium-profile &&  \
+    chown -R www-data:www-data uBOLite.chromium.mv3
 # enable snapshot support
 ENV LD_ENABLE_SNAPSHOTS=True
