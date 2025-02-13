@@ -4,16 +4,17 @@
 {% load bookmarks %}
 
 {% block content %}
-  <div ld-bulk-edit class="bookmarks-page grid columns-md-1">
+  <div ld-bulk-edit
+       class="bookmarks-page grid columns-md-1 {% if bookmark_list.collapse_side_panel %}collapse-side-panel{% endif %}">
 
     {# Bookmark list #}
-    <section class="content-area col-2">
+    <section class="main content-area col-2">
       <div class="content-area-header mb-0">
         <h2>Bookmarks</h2>
         <div class="header-controls">
           {% bookmark_search bookmark_list.search %}
           {% include 'bookmarks/bulk_edit/toggle.html' %}
-          <button ld-tag-modal class="btn ml-2 show-md">Tags</button>
+          <button ld-filter-drawer-trigger class="btn ml-2">Filters</button>
         </div>
       </div>
 
@@ -30,7 +31,7 @@
     </section>
 
     {# Tag cloud #}
-    <section class="content-area col-1 hide-md">
+    <section class="side-panel content-area col-1">
       <div class="content-area-header">
         <h2>Tags</h2>
       </div>
@@ -38,12 +39,14 @@
         {% include 'bookmarks/tag_cloud.html' %}
       </div>
     </section>
-
-    {# Bookmark details #}
-    <turbo-frame id="details-modal" target="_top">
-      {% if details %}
-        {% include 'bookmarks/details/modal.html' %}
-      {% endif %}
-    </turbo-frame>
   </div>
+{% endblock %}
+
+{% block overlays %}
+  {# Bookmark details #}
+  <turbo-frame id="details-modal" target="_top">
+    {% if details %}
+      {% include 'bookmarks/details/modal.html' %}
+    {% endif %}
+  </turbo-frame>
 {% endblock %}
