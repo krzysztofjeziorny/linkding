@@ -6,15 +6,15 @@
 #
 asgiref==3.8.1
     # via django
-black==24.10.0
+black==25.1.0
     # via -r requirements.dev.in
 click==8.1.8
     # via black
-coverage==7.6.9
+coverage==7.6.12
     # via -r requirements.dev.in
-django==5.1.6
+django==5.1.7
     # via django-debug-toolbar
-django-debug-toolbar==4.4.6
+django-debug-toolbar==5.0.1
     # via -r requirements.dev.in
 execnet==2.1.1
     # via pytest-xdist
@@ -32,22 +32,22 @@ pathspec==0.12.1
     # via black
 platformdirs==4.3.6
     # via black
-playwright==1.49.0
+playwright==1.50.0
     # via -r requirements.dev.in
 pluggy==1.5.0
     # via pytest
-pyee==12.0.0
+pyee==12.1.1
     # via playwright
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -r requirements.dev.in
     #   pytest-django
     #   pytest-xdist
-pytest-django==4.9.0
+pytest-django==4.10.0
     # via -r requirements.dev.in
 pytest-xdist==3.6.1
     # via -r requirements.dev.in
-sqlparse==0.5.2
+sqlparse==0.5.3
     # via
     #   django
     #   django-debug-toolbar
