@@ -11,7 +11,6 @@ test:
 
 format:
 	black bookmarks
-	black siteroot
 	npx prettier bookmarks/frontend --write
 	npx prettier bookmarks/styles --write
 

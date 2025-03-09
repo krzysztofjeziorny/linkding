@@ -55,6 +55,35 @@ class BookmarkDetailsModalTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin
     def find_asset(self, soup, asset):
         return soup.find("div", {"data-asset-id": asset.id})
 
+    def details_route_access_test(self):
+        # own bookmark
+        bookmark = self.setup_bookmark()
+        response = self.client.get(
+            reverse("linkding:bookmarks.index") + f"?details={bookmark.id}"
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # other user's bookmark
+        other_user = self.setup_user()
+        bookmark = self.setup_bookmark(user=other_user)
+        response = self.client.get(
+            reverse("linkding:bookmarks.index") + f"?details={bookmark.id}"
+        )
+        self.assertEqual(response.status_code, 404)
+
+        # non-existent bookmark - just returns without modal in response
+        response = self.client.get(
+            reverse("linkding:bookmarks.index") + "?details=9999"
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # guest user
+        self.client.logout()
+        response = self.client.get(
+            reverse("linkding:bookmarks.shared") + f"?details={bookmark.id}"
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_access(self):
         # own bookmark
         bookmark = self.setup_bookmark()

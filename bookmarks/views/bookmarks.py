@@ -4,9 +4,9 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models import QuerySet
 from django.http import (
-    HttpResponseRedirect,
     HttpResponseBadRequest,
     HttpResponseForbidden,
+    HttpResponseRedirect,
 )
 from django.shortcuts import render
 from django.urls import reverse
@@ -17,19 +17,20 @@ from bookmarks.models import (
     Bookmark,
     BookmarkSearch,
 )
-from bookmarks.services import assets as asset_actions, tasks
+from bookmarks.services import assets as asset_actions
+from bookmarks.services import tasks
 from bookmarks.services.bookmarks import (
     archive_bookmark,
     archive_bookmarks,
-    unarchive_bookmark,
-    unarchive_bookmarks,
     delete_bookmarks,
-    tag_bookmarks,
-    untag_bookmarks,
     mark_bookmarks_as_read,
     mark_bookmarks_as_unread,
     share_bookmarks,
+    tag_bookmarks,
+    unarchive_bookmark,
+    unarchive_bookmarks,
     unshare_bookmarks,
+    untag_bookmarks,
 )
 from bookmarks.type_defs import HttpRequest
 from bookmarks.utils import get_safe_return_url
@@ -151,14 +152,34 @@ def new(request: HttpRequest):
     form = BookmarkForm(request)
     if request.method == "POST":
         if form.is_valid():
-            form.save()
-            if form.is_auto_close:
+            current_user = request.user
+            tag_string = convert_tag_string(form.data["tag_string"])
+            create_bookmark(form.save(commit=False), tag_string, current_user)
+            if auto_close:
                 return HttpResponseRedirect(reverse("linkding:bookmarks.close"))
             else:
                 return HttpResponseRedirect(reverse("linkding:bookmarks.index"))
+    else:
+        form = BookmarkForm()
+        if initial_url:
+            form.initial["url"] = initial_url
+        if initial_title:
+            form.initial["title"] = initial_title
+        if initial_description:
+            form.initial["description"] = initial_description
+        if initial_notes:
+            form.initial["notes"] = initial_notes
+        if initial_auto_close:
+            form.initial["auto_close"] = "true"
+        if initial_mark_unread:
+            form.initial["unread"] = "true"
 
     status = 422 if request.method == "POST" and not form.is_valid() else 200
-    context = {"form": form, "return_url": reverse("linkding:bookmarks.index")}
+    context = {
+        "form": form,
+        "auto_close": initial_auto_close,
+        "return_url": reverse("linkding:bookmarks.index"),
+    }
 
     return render(request, "bookmarks/new.html", context, status=status)
 
