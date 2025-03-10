@@ -32,15 +32,6 @@ case $target in
 		target_user="worker"
 		dry_run="true"
 		;;
-	"kotangens")
-		target_host="kotangens.acat.cc"
-		target_user="kj"
-		dry_run="true"
-		;;
-	"bobbie")
-		target_host="bobbie"
-		target_user="sklave"
-		;;
 	*)
 		target_host=""
 		target_user=""

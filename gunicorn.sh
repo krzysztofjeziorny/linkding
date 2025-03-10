@@ -13,7 +13,7 @@ DJANGO_WSGI_MODULE=siteroot.wsgi                  # WSGI module name
 echo "Starting $NAME as $(whoami)"
 
 cd $DJANGODIR || exit
-source .venv/bin/activate
+source $DJANGODIR/.venv/bin/activate
 export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 export PYTHONPATH=$DJANGODIR:$PYTHONPATH
 
@@ -23,8 +23,7 @@ test -d "$RUNDIR" || mkdir -p "$RUNDIR"
 
 # Start your Django Unicorn
 # Programs meant to be run under supervisor should not daemonize themselves (do not use --daemon)
-# gunicorn3 for python3
-exec $DJANGODIR/.venv/bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
+exec gunicorn ${DJANGO_WSGI_MODULE}:application \
   --name $NAME \
   --workers $NUM_WORKERS \
   --user=$USER --group=$GROUP \
@@ -32,4 +31,3 @@ exec $DJANGODIR/.venv/bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
   --log-file=- \
   --timeout $TIMEOUT \
   --bind=unix:$SOCKFILE
-
