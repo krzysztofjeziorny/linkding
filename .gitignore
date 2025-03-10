@@ -195,7 +195,3 @@ typings/
 /uBOLite.chromium.mv3
 /chromium-profile
 /.direnv
-
-# KJ
-deploy.sh
-gunicorn.sh
