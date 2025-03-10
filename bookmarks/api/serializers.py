@@ -3,14 +3,11 @@ from django.templatetags.static import static
 from rest_framework import serializers
 from rest_framework.serializers import ListSerializer
 
-from bookmarks.models import Bookmark, Tag, build_tag_string, UserProfile
-from bookmarks.services.bookmarks import (
-    create_bookmark,
-    update_bookmark,
-    enhance_with_website_metadata,
-)
+from bookmarks.models import Bookmark, BookmarkAsset, Tag, build_tag_string, UserProfile
+from bookmarks.services import bookmarks
 from bookmarks.services.tags import get_or_create_tag
 from bookmarks.services.wayback import generate_fallback_webarchive_url
+from bookmarks.utils import app_version
 
 
 class TagListField(serializers.ListField):
@@ -23,6 +20,11 @@ class BookmarkListSerializer(ListSerializer):
         prefetch_related_objects(data, "tags")
 
         return super().to_representation(data)
+
+
+class EmtpyField(serializers.ReadOnlyField):
+    def to_representation(self, value):
+        return None
 
 
 class BookmarkSerializer(serializers.ModelSerializer):
@@ -65,8 +67,8 @@ class BookmarkSerializer(serializers.ModelSerializer):
     preview_image_url = serializers.SerializerMethodField()
     web_archive_snapshot_url = serializers.SerializerMethodField()
     # Add dummy website title and description fields for backwards compatibility but keep them empty
-    website_title = serializers.SerializerMethodField()
-    website_description = serializers.SerializerMethodField()
+    website_title = EmtpyField()
+    website_description = EmtpyField()
 
     def get_favicon_url(self, obj: Bookmark):
         if not obj.favicon_file:
@@ -90,23 +92,25 @@ class BookmarkSerializer(serializers.ModelSerializer):
 
         return generate_fallback_webarchive_url(obj.url, obj.date_added)
 
-    def get_website_title(self, obj: Bookmark):
-        return None
-
-    def get_website_description(self, obj: Bookmark):
-        return None
-
     def create(self, validated_data):
         tag_names = validated_data.pop("tag_names", [])
         tag_string = build_tag_string(tag_names)
         bookmark = Bookmark(**validated_data)
 
-        saved_bookmark = create_bookmark(bookmark, tag_string, self.context["user"])
+        disable_scraping = self.context.get("disable_scraping", False)
+        disable_html_snapshot = self.context.get("disable_html_snapshot", False)
+
+        saved_bookmark = bookmarks.create_bookmark(
+            bookmark,
+            tag_string,
+            self.context["user"],
+            disable_html_snapshot=disable_html_snapshot,
+        )
         # Unless scraping is explicitly disabled, enhance bookmark with website
         # metadata to preserve backwards compatibility with clients that expect
         # title and description to be populated automatically when left empty
-        if not self.context.get("disable_scraping", False):
-            enhance_with_website_metadata(saved_bookmark)
+        if not disable_scraping:
+            bookmarks.enhance_with_website_metadata(saved_bookmark)
         return saved_bookmark
 
     def update(self, instance: Bookmark, validated_data):
@@ -117,7 +121,7 @@ class BookmarkSerializer(serializers.ModelSerializer):
             if not field.read_only and field_name in validated_data:
                 setattr(instance, field_name, validated_data[field_name])
 
-        return update_bookmark(instance, tag_string, self.context["user"])
+        return bookmarks.update_bookmark(instance, tag_string, self.context["user"])
 
     def validate(self, attrs):
         # When creating a bookmark, the service logic prevents duplicate URLs by
@@ -136,6 +140,21 @@ class BookmarkSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
+
+
+class BookmarkAssetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BookmarkAsset
+        fields = [
+            "id",
+            "bookmark",
+            "date_created",
+            "file_size",
+            "asset_type",
+            "content_type",
+            "display_name",
+            "status",
+        ]
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -163,4 +182,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "display_url",
             "permanent_notes",
             "search_preferences",
+            "version",
         ]
+
+    version = serializers.ReadOnlyField(default=app_version)

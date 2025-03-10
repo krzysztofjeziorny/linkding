@@ -8,7 +8,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from bookmarks.models import Bookmark, BookmarkAsset
-from bookmarks.services import tasks, bookmarks
+from bookmarks.services import assets, tasks
 from bookmarks.tests.helpers import (
     BookmarkFactoryMixin,
     BookmarkListTestMixin,
@@ -37,7 +37,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark()
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "archive": [bookmark.id],
             },
@@ -54,7 +54,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark(user=other_user)
 
         response = self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "archive": [bookmark.id],
             },
@@ -69,7 +69,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark(is_archived=True)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "unarchive": [bookmark.id],
             },
@@ -85,7 +85,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark(is_archived=True, user=other_user)
 
         response = self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "unarchive": [bookmark.id],
             },
@@ -99,7 +99,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark()
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "remove": [bookmark.id],
             },
@@ -114,7 +114,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark(user=other_user)
 
         response = self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "remove": [bookmark.id],
             },
@@ -126,7 +126,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark(unread=True)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "mark_as_read": [bookmark.id],
             },
@@ -139,7 +139,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark(shared=True)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "unshare": [bookmark.id],
             },
@@ -156,7 +156,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark(user=other_user, shared=True)
 
         response = self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "unshare": [bookmark.id],
             },
@@ -172,7 +172,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark()
         with patch.object(tasks, "_create_html_snapshot_task"):
             self.client.post(
-                reverse("bookmarks:index.action"),
+                reverse("linkding:bookmarks.index.action"),
                 {
                     "create_html_snapshot": [bookmark.id],
                 },
@@ -187,7 +187,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark(user=other_user)
         with patch.object(tasks, "_create_html_snapshot_task"):
             response = self.client.post(
-                reverse("bookmarks:index.action"),
+                reverse("linkding:bookmarks.index.action"),
                 {
                     "create_html_snapshot": [bookmark.id],
                 },
@@ -200,9 +200,9 @@ class BookmarkActionViewTestCase(
         file_content = b"file content"
         upload_file = SimpleUploadedFile("test.txt", file_content)
 
-        with patch.object(bookmarks, "upload_asset") as mock_upload_asset:
+        with patch.object(assets, "upload_asset") as mock_upload_asset:
             response = self.client.post(
-                reverse("bookmarks:index.action"),
+                reverse("linkding:bookmarks.index.action"),
                 {"upload_asset": bookmark.id, "upload_asset_file": upload_file},
             )
             self.assertEqual(response.status_code, 302)
@@ -221,21 +221,42 @@ class BookmarkActionViewTestCase(
         file_content = b"file content"
         upload_file = SimpleUploadedFile("test.txt", file_content)
 
-        with patch.object(bookmarks, "upload_asset") as mock_upload_asset:
+        with patch.object(assets, "upload_asset") as mock_upload_asset:
             response = self.client.post(
-                reverse("bookmarks:index.action"),
+                reverse("linkding:bookmarks.index.action"),
                 {"upload_asset": bookmark.id, "upload_asset_file": upload_file},
             )
             self.assertEqual(response.status_code, 404)
 
             mock_upload_asset.assert_not_called()
 
+    @override_settings(LD_DISABLE_ASSET_UPLOAD=True)
+    def test_upload_asset_disabled(self):
+        bookmark = self.setup_bookmark()
+        file_content = b"file content"
+        upload_file = SimpleUploadedFile("test.txt", file_content)
+
+        response = self.client.post(
+            reverse("linkding:bookmarks.index.action"),
+            {"upload_asset": bookmark.id, "upload_asset_file": upload_file},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_upload_asset_without_file(self):
+        bookmark = self.setup_bookmark()
+
+        response = self.client.post(
+            reverse("linkding:bookmarks.index.action"),
+            {"upload_asset": bookmark.id},
+        )
+        self.assertEqual(response.status_code, 400)
+
     def test_remove_asset(self):
         bookmark = self.setup_bookmark()
         asset = self.setup_asset(bookmark)
 
         response = self.client.post(
-            reverse("bookmarks:index.action"), {"remove_asset": asset.id}
+            reverse("linkding:bookmarks.index.action"), {"remove_asset": asset.id}
         )
         self.assertEqual(response.status_code, 302)
         self.assertFalse(BookmarkAsset.objects.filter(id=asset.id).exists())
@@ -246,7 +267,7 @@ class BookmarkActionViewTestCase(
         asset = self.setup_asset(bookmark)
 
         response = self.client.post(
-            reverse("bookmarks:index.action"), {"remove_asset": asset.id}
+            reverse("linkding:bookmarks.index.action"), {"remove_asset": asset.id}
         )
         self.assertEqual(response.status_code, 404)
         self.assertTrue(BookmarkAsset.objects.filter(id=asset.id).exists())
@@ -255,7 +276,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark()
 
         response = self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "update_state": bookmark.id,
                 "is_archived": "on",
@@ -275,7 +296,7 @@ class BookmarkActionViewTestCase(
         bookmark = self.setup_bookmark(user=other_user)
 
         response = self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "update_state": bookmark.id,
                 "is_archived": "on",
@@ -296,7 +317,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark()
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_archive"],
                 "bulk_execute": [""],
@@ -321,7 +342,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(user=other_user)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_archive"],
                 "bulk_execute": [""],
@@ -343,7 +364,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(is_archived=True)
 
         self.client.post(
-            reverse("bookmarks:archived.action"),
+            reverse("linkding:bookmarks.archived.action"),
             {
                 "bulk_action": ["bulk_unarchive"],
                 "bulk_execute": [""],
@@ -368,7 +389,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(is_archived=True, user=other_user)
 
         self.client.post(
-            reverse("bookmarks:archived.action"),
+            reverse("linkding:bookmarks.archived.action"),
             {
                 "bulk_action": ["bulk_unarchive"],
                 "bulk_execute": [""],
@@ -390,7 +411,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark()
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_delete"],
                 "bulk_execute": [""],
@@ -415,7 +436,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(user=other_user)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_delete"],
                 "bulk_execute": [""],
@@ -439,7 +460,7 @@ class BookmarkActionViewTestCase(
         tag2 = self.setup_tag()
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_tag"],
                 "bulk_execute": [""],
@@ -471,7 +492,7 @@ class BookmarkActionViewTestCase(
         tag2 = self.setup_tag()
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_tag"],
                 "bulk_execute": [""],
@@ -500,7 +521,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(tags=[tag1, tag2])
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_untag"],
                 "bulk_execute": [""],
@@ -532,7 +553,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(tags=[tag1, tag2], user=other_user)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_untag"],
                 "bulk_execute": [""],
@@ -559,7 +580,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(unread=True)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_read"],
                 "bulk_execute": [""],
@@ -584,7 +605,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(unread=True, user=other_user)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_read"],
                 "bulk_execute": [""],
@@ -606,7 +627,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(unread=False)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_unread"],
                 "bulk_execute": [""],
@@ -631,7 +652,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(unread=False, user=other_user)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_unread"],
                 "bulk_execute": [""],
@@ -653,7 +674,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(shared=False)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_share"],
                 "bulk_execute": [""],
@@ -678,7 +699,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(shared=False, user=other_user)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_share"],
                 "bulk_execute": [""],
@@ -700,7 +721,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(shared=True)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_unshare"],
                 "bulk_execute": [""],
@@ -725,7 +746,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark(shared=True, user=other_user)
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_unshare"],
                 "bulk_execute": [""],
@@ -747,7 +768,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark()
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_archive"],
                 "bulk_execute": [""],
@@ -763,7 +784,7 @@ class BookmarkActionViewTestCase(
         self.setup_numbered_bookmarks(100)
 
         self.client.post(
-            reverse("bookmarks:index.action") + "?page=2",
+            reverse("linkding:bookmarks.index.action") + "?page=2",
             {
                 "bulk_action": ["bulk_delete"],
                 "bulk_execute": [""],
@@ -792,7 +813,7 @@ class BookmarkActionViewTestCase(
         self.assertIsNotNone(Bookmark.objects.filter(title="Bookmark 3").first())
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_delete"],
                 "bulk_execute": [""],
@@ -812,7 +833,7 @@ class BookmarkActionViewTestCase(
         self.assertEqual(3, Bookmark.objects.filter(title__startswith="foo").count())
 
         self.client.post(
-            reverse("bookmarks:index.action") + "?q=foo",
+            reverse("linkding:bookmarks.index.action") + "?q=foo",
             {
                 "bulk_action": ["bulk_delete"],
                 "bulk_execute": [""],
@@ -837,7 +858,7 @@ class BookmarkActionViewTestCase(
         )
 
         self.client.post(
-            reverse("bookmarks:archived.action"),
+            reverse("linkding:bookmarks.archived.action"),
             {
                 "bulk_action": ["bulk_delete"],
                 "bulk_execute": [""],
@@ -857,7 +878,7 @@ class BookmarkActionViewTestCase(
         self.assertEqual(3, Bookmark.objects.filter(title__startswith="foo").count())
 
         self.client.post(
-            reverse("bookmarks:archived.action") + "?q=foo",
+            reverse("linkding:bookmarks.archived.action") + "?q=foo",
             {
                 "bulk_action": ["bulk_delete"],
                 "bulk_execute": [""],
@@ -872,7 +893,7 @@ class BookmarkActionViewTestCase(
         self.setup_bulk_edit_scope_test_data()
 
         response = self.client.post(
-            reverse("bookmarks:shared.action"),
+            reverse("linkding:bookmarks.shared.action"),
             {
                 "bulk_action": ["bulk_delete"],
                 "bulk_execute": [""],
@@ -887,7 +908,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark()
 
         response = self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_archive"],
                 "bulk_execute": [""],
@@ -896,7 +917,7 @@ class BookmarkActionViewTestCase(
         self.assertEqual(response.status_code, 302)
 
         response = self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bulk_action": ["bulk_archive"],
                 "bulk_execute": [""],
@@ -913,7 +934,7 @@ class BookmarkActionViewTestCase(
         bookmark3 = self.setup_bookmark()
 
         self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             {
                 "bookmark_id": [
                     str(bookmark1.id),
@@ -926,22 +947,22 @@ class BookmarkActionViewTestCase(
         self.assertBookmarksAreUnmodified([bookmark1, bookmark2, bookmark3])
 
     def test_index_action_redirects_to_index_with_query_params(self):
-        url = reverse("bookmarks:index.action") + "?q=foo&page=2"
-        redirect_url = reverse("bookmarks:index") + "?q=foo&page=2"
+        url = reverse("linkding:bookmarks.index.action") + "?q=foo&page=2"
+        redirect_url = reverse("linkding:bookmarks.index") + "?q=foo&page=2"
         response = self.client.post(url)
 
         self.assertRedirects(response, redirect_url)
 
     def test_archived_action_redirects_to_archived_with_query_params(self):
-        url = reverse("bookmarks:archived.action") + "?q=foo&page=2"
-        redirect_url = reverse("bookmarks:archived") + "?q=foo&page=2"
+        url = reverse("linkding:bookmarks.archived.action") + "?q=foo&page=2"
+        redirect_url = reverse("linkding:bookmarks.archived") + "?q=foo&page=2"
         response = self.client.post(url)
 
         self.assertRedirects(response, redirect_url)
 
     def test_shared_action_redirects_to_shared_with_query_params(self):
-        url = reverse("bookmarks:shared.action") + "?q=foo&page=2"
-        redirect_url = reverse("bookmarks:shared") + "?q=foo&page=2"
+        url = reverse("linkding:bookmarks.shared.action") + "?q=foo&page=2"
+        redirect_url = reverse("linkding:bookmarks.shared") + "?q=foo&page=2"
         response = self.client.post(url)
 
         self.assertRedirects(response, redirect_url)
@@ -991,7 +1012,7 @@ class BookmarkActionViewTestCase(
     def test_index_action_with_turbo_returns_bookmark_update(self):
         fixture = self.bookmark_update_fixture()
         response = self.client.post(
-            reverse("bookmarks:index.action"),
+            reverse("linkding:bookmarks.index.action"),
             HTTP_ACCEPT="text/vnd.turbo-stream.html",
         )
 
@@ -1009,7 +1030,7 @@ class BookmarkActionViewTestCase(
     def test_archived_action_with_turbo_returns_bookmark_update(self):
         fixture = self.bookmark_update_fixture()
         response = self.client.post(
-            reverse("bookmarks:archived.action"),
+            reverse("linkding:bookmarks.archived.action"),
             HTTP_ACCEPT="text/vnd.turbo-stream.html",
         )
 
@@ -1027,7 +1048,7 @@ class BookmarkActionViewTestCase(
     def test_shared_action_with_turbo_returns_bookmark_update(self):
         fixture = self.bookmark_update_fixture()
         response = self.client.post(
-            reverse("bookmarks:shared.action"),
+            reverse("linkding:bookmarks.shared.action"),
             HTTP_ACCEPT="text/vnd.turbo-stream.html",
         )
 

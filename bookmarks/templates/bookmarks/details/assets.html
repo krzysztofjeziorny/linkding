@@ -18,7 +18,7 @@
           </div>
           <div class="asset-actions">
             {% if asset.file %}
-              <a class="btn btn-link" href="{% url 'bookmarks:assets.view' asset.id %}" target="_blank">View</a>
+              <a class="btn btn-link" href="{% url 'linkding:assets.view' asset.id %}" target="_blank">View</a>
             {% endif %}
             {% if details.is_editable %}
               <button ld-confirm-button type="submit" name="remove_asset" value="{{ asset.id }}" class="btn btn-link">
@@ -33,12 +33,16 @@
 
   {% if details.is_editable %}
     <div class="assets-actions">
-      <button type="submit" name="create_html_snapshot" value="{{ details.bookmark.id }}" class="btn btn-sm"
-              {% if details.has_pending_assets %}disabled{% endif %}>Create HTML snapshot
-      </button>
-      <button ld-upload-button id="upload-asset" name="upload_asset" value="{{ details.bookmark.id }}" type="submit"
-              class="btn btn-sm">Upload file
-      </button>
+      {% if details.snapshots_enabled %}
+        <button type="submit" name="create_html_snapshot" value="{{ details.bookmark.id }}" class="btn btn-sm"
+                {% if details.has_pending_assets %}disabled{% endif %}>Create HTML snapshot
+        </button>
+      {% endif %}
+      {% if details.uploads_enabled %}
+        <button ld-upload-button id="upload-asset" name="upload_asset" value="{{ details.bookmark.id }}" type="submit"
+                class="btn btn-sm">Upload file
+        </button>
+      {% endif %}
       <input id="upload-asset-file" name="upload_asset_file" type="file" class="d-hide">
     </div>
   {% endif %}
