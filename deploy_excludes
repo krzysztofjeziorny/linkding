@@ -24,7 +24,6 @@ _sources
 *.vim
 *.vscode
 *~
-/bookmarks/static/favicon.png
 data
 db.sqlite3
 deploy_excludes
@@ -40,7 +39,7 @@ node_modules
 rollup.config.mjs
 sass
 scss
-/siteroot/settings/dev.py
+/bookmarks/settings/dev.py
 /static
 tmp
 vim
