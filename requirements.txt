@@ -26,8 +26,7 @@ cryptography==44.0.2
     # via
     #   josepy
     #   mozilla-django-oidc
-    #   pyopenssl
-django==5.1.8
+django==5.2
     # via
     #   -r requirements.in
     #   django-registration
@@ -35,21 +34,21 @@ django==5.1.8
     #   mozilla-django-oidc
 django-environ==0.12.0
     # via -r requirements.in
-django-registration==5.1.0
+django-registration==5.2.1
     # via -r requirements.in
 django-widget-tweaks==1.5.0
     # via -r requirements.in
-djangorestframework==3.15.2
+djangorestframework==3.16.0
     # via -r requirements.in
 gunicorn==23.0.0
     # via -r requirements.in
-huey==2.5.2
+huey==2.5.3
     # via -r requirements.in
 idna==3.10
     # via requests
 josepy==2.0.0
     # via mozilla-django-oidc
-markdown==3.7
+markdown==3.8
     # via -r requirements.in
 mozilla-django-oidc==4.0.1
     # via -r requirements.in
@@ -74,13 +73,13 @@ sqlparse==0.5.3
     # via django
 supervisor==4.2.5
     # via -r requirements.in
-typing-extensions==4.12.2
+typing-extensions==4.13.2
     # via beautifulsoup4
-urllib3==2.3.0
+urllib3==2.4.0
     # via
     #   requests
     #   waybackpy
-uwsgi==2.0.28
+uwsgi==2.0.29
     # via -r requirements.in
 waybackpy==3.0.6
     # via -r requirements.in
