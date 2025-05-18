@@ -2,9 +2,11 @@ beautifulsoup4
 bleach
 bleach-allowlist
 Django
+django-environ
 django-registration
 django-widget-tweaks
 djangorestframework
+gunicorn
 huey
 Markdown
 mozilla-django-oidc

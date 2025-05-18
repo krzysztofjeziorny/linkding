@@ -25,14 +25,15 @@
     "@hotwired/turbo": "^8.0.6",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/wasm-node": "^4.13.0",
+    "@rollup/wasm-node": "^4.21.3",
     "cssnano": "^7.0.6",
-    "postcss": "^8.4.45",
+    "postcss": "^8.4.47",
     "postcss-cli": "^11.0.0",
     "postcss-import": "^16.1.0",
     "postcss-nesting": "^13.0.0",
-    "rollup-plugin-svelte": "^7.2.0",
-    "svelte": "^4.0.0"
+    "rollup-plugin-svelte": "^7.2.2",
+    "spectre.css": "^0.5.9",
+    "svelte": "^4.2.19"
   },
   "devDependencies": {
     "prettier": "^3.3.3"
