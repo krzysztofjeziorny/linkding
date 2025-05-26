@@ -15,4 +15,4 @@ format:
 	npx prettier bookmarks/styles --write
 
 install:
-	.venv/bin/pip install -r requirements.txt --upgrade
+	uv sync
