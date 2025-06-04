@@ -9,7 +9,7 @@ dependencies = [
     "beautifulsoup4",
     "bleach",
     "bleach-allowlist",
-    "django",
+    "django~=5.2.2",
     "django-environ",
     "django-registration",
     "django-widget-tweaks",
