@@ -1,4 +1,4 @@
-.PHONY: serve
+.PHONY: serve install
 
 serve:
 	python manage.py runserver
@@ -13,3 +13,6 @@ format:
 	black bookmarks
 	npx prettier bookmarks/frontend --write
 	npx prettier bookmarks/styles --write
+
+install:
+	uv sync

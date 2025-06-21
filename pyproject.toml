@@ -1,0 +1,30 @@
+[project]
+name = "linkding"
+version = "1.40.0"
+description = "linkding is a bookmark manager that you can host yourself."
+authors = ["Sascha Ißbrücker <https://github.com/sissbruecker>"]
+license = "MIT"
+readme = "README.md"
+dependencies = [
+    "beautifulsoup4",
+    "bleach",
+    "bleach-allowlist",
+    "django~=5.2.2",
+    "django-environ",
+    "django-registration",
+    "django-widget-tweaks",
+    "djangorestframework",
+    "gunicorn",
+    "huey",
+    "markdown",
+    "mozilla-django-oidc",
+    "psycopg2-binary",
+    "python-dateutil",
+    "requests",
+    "supervisor",
+    "uwsgi",
+    "waybackpy",
+]
+
+[tool.uv]
+package = false

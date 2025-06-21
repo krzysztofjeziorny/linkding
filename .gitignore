@@ -194,5 +194,8 @@ typings/
 # ublock + chromium
 /uBOLite.chromium.mv3
 /chromium-profile
-# direnv
 /.direnv
+
+# KJ
+deploy.sh
+gunicorn.sh
