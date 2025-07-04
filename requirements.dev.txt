@@ -14,7 +14,13 @@ coverage==7.8.0
     # via -r requirements.dev.in
 django==5.2.3
     # via django-debug-toolbar
+<<<<<<< .merge_file_Wi7RtG
 django-debug-toolbar==5.1.0
+||||||| .merge_file_uIVkji
+django-debug-toolbar==4.4.6
+=======
+django-debug-toolbar==5.2.0
+>>>>>>> .merge_file_BP2Uph
     # via -r requirements.dev.in
 execnet==2.1.1
     # via pytest-xdist
