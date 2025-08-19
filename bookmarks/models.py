@@ -40,7 +40,7 @@ def parse_tag_string(tag_string: str, delimiter: str = ","):
         return []
     names = tag_string.strip().split(delimiter)
     # remove empty names, sanitize remaining names
-    names = [sanitize_tag_name(name) for name in names if name]
+    names = [sanitize_tag_name(name) for name in names if name.strip()]
     # remove duplicates
     names = unique(names, str.lower)
     names.sort(key=str.lower)
@@ -132,6 +132,14 @@ class BookmarkAsset(models.Model):
     display_name = models.CharField(max_length=2048, blank=True, null=False)
     status = models.CharField(max_length=64, blank=False, null=False)
     gzip = models.BooleanField(default=False, null=False)
+
+    @property
+    def download_name(self):
+        return (
+            f"{self.display_name}.html"
+            if self.asset_type == BookmarkAsset.TYPE_SNAPSHOT
+            else self.display_name
+        )
 
     def save(self, *args, **kwargs):
         if self.file:
