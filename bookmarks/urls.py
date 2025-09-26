@@ -49,6 +49,11 @@ urlpatterns = [
     path("bundles/new", views.bundles.new, name="bundles.new"),
     path("bundles/<int:bundle_id>/edit", views.bundles.edit, name="bundles.edit"),
     path("bundles/preview", views.bundles.preview, name="bundles.preview"),
+    # Tags
+    path("tags", views.tags.tags_index, name="tags.index"),
+    path("tags/new", views.tags.tag_new, name="tags.new"),
+    path("tags/<int:tag_id>/edit", views.tags.tag_edit, name="tags.edit"),
+    path("tags/merge", views.tags.tag_merge, name="tags.merge"),
     # Settings
     path("settings", views.settings.general, name="settings.index"),
     path("settings/general", views.settings.general, name="settings.general"),
@@ -122,10 +127,9 @@ if settings.LD_ENABLE_OIDC:
     urlpatterns.append(path("oidc/", include("mozilla_django_oidc.urls")))
 
 # Debug toolbar
-if settings.DEBUG:
-    import debug_toolbar
-
-    urlpatterns.append(path("__debug__/", include(debug_toolbar.urls)))
+# if settings.DEBUG:
+#    import debug_toolbar
+#    urlpatterns.append(path("__debug__/", include(debug_toolbar.urls)))
 
 # Registration
 if settings.ALLOW_REGISTRATION:

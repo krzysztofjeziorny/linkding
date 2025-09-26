@@ -1,18 +1,26 @@
 .PHONY: serve install
 
+init:
+	uv sync
+	uv run manage.py migrate
+	npm install
+
 serve:
-	python manage.py runserver
+	uv run manage.py runserver
 
 tasks:
-	python manage.py run_huey
+	uv run manage.py run_huey
 
 test:
-	pytest -n auto
+	uv run pytest -n auto
 
 format:
-	black bookmarks
+	uv run black bookmarks
 	npx prettier bookmarks/frontend --write
 	npx prettier bookmarks/styles --write
 
 install:
 	uv sync
+
+frontend:
+	npm run dev

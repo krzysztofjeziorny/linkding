@@ -14,7 +14,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.http import QueryDict
 
-from bookmarks.utils import unique
+from bookmarks.utils import unique, normalize_url
 from bookmarks.validators import BookmarkURLValidator
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,7 @@ def build_tag_string(tag_names: List[str], delimiter: str = ","):
 
 class Bookmark(models.Model):
     url = models.CharField(max_length=2048, validators=[BookmarkURLValidator()])
+    url_normalized = models.CharField(max_length=2048, blank=True, db_index=True)
     title = models.CharField(max_length=512, blank=True)
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)
@@ -95,6 +96,10 @@ class Bookmark(models.Model):
     def tag_names(self):
         names = [tag.name for tag in self.tags.all()]
         return sorted(names)
+
+    def save(self, *args, **kwargs):
+        self.url_normalized = normalize_url(self.url)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.resolved_title + " (" + self.url[:30] + "...)"
@@ -474,6 +479,7 @@ class UserProfile(models.Model):
     search_preferences = models.JSONField(default=dict, null=False)
     enable_automatic_html_snapshots = models.BooleanField(default=True, null=False)
     default_mark_unread = models.BooleanField(default=False, null=False)
+    default_mark_shared = models.BooleanField(default=False, null=False)
     items_per_page = models.IntegerField(
         null=False, default=30, validators=[MinValueValidator(10)]
     )
@@ -515,6 +521,7 @@ class UserProfileForm(forms.ModelForm):
             "display_remove_bookmark_action",
             "permanent_notes",
             "default_mark_unread",
+            "default_mark_shared",
             "custom_css",
             "auto_tagging_rules",
             "items_per_page",
