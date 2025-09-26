@@ -20,7 +20,7 @@ format:
 	npx prettier bookmarks/styles --write
 
 install:
-	uv sync
+	uv sync --no-dev --group postgres
 
 frontend:
 	npm run dev
