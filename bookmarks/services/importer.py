@@ -8,7 +8,7 @@ from django.utils import timezone
 from bookmarks.models import Bookmark, Tag
 from bookmarks.services import tasks
 from bookmarks.services.parser import parse, NetscapeBookmark
-from bookmarks.utils import parse_timestamp
+from bookmarks.utils import normalize_url, parse_timestamp
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +45,9 @@ class TagCache:
         result = []
         for tag_name in tag_names:
             tag = self.get(tag_name)
+            # Tag may not have been created if tag name exceeded maximum length
             # Prevent returning duplicates
-            if not (tag in result):
+            if tag and not (tag in result):
                 result.append(tag)
 
         return result
@@ -181,6 +182,7 @@ def _import_batch(
         bookmarks_to_update,
         [
             "url",
+            "url_normalized",
             "date_added",
             "date_modified",
             "unread",
@@ -234,6 +236,7 @@ def _copy_bookmark_data(
     netscape_bookmark: NetscapeBookmark, bookmark: Bookmark, options: ImportOptions
 ):
     bookmark.url = netscape_bookmark.href
+    bookmark.url_normalized = normalize_url(bookmark.url)
     if netscape_bookmark.date_added:
         bookmark.date_added = parse_timestamp(netscape_bookmark.date_added)
     else:
