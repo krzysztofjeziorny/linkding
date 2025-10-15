@@ -5,10 +5,10 @@ description = "Self-hosted bookmark manager that is designed be to be minimal, f
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "beautifulsoup4>=4.13.5",
+    "beautifulsoup4>=4.14.2",
     "bleach>=6.2.0",
     "bleach-allowlist>=1.0.3",
-    "django>=5.2.6",
+    "django>=5.2.7",
     "django-environ>=0.12.0",
     "django-registration>=5.2.1",
     "django-widget-tweaks>=1.5.0",
@@ -20,7 +20,7 @@ dependencies = [
     "python-dateutil>=2.9.0.post0",
     "requests>=2.32.5",
     "supervisor>=4.3.0",
-    "uwsgi>=2.0.30",
+    "uwsgi>=2.0.31",
     "waybackpy>=3.0.6",
 ]
 
