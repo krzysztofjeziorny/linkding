@@ -20,7 +20,7 @@
               <a href="?{{ tag.query_string }}"
                  class="mr-2" data-is-tag-item>
                 <span
-                    class="highlight-char">{{ tag.name|first_char }}</span><span>{{ tag.name|remaining_chars:1 }}</span>
+                  class="highlight-char">{{ tag.name|first_char }}</span><span>{{ tag.name|remaining_chars:1 }}</span>
               </a>
             {% else %}
               {# Render tags normally #}

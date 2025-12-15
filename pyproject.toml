@@ -5,31 +5,33 @@ description = "Self-hosted bookmark manager that is designed be to be minimal, f
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "beautifulsoup4>=4.12.3",
-    "bleach>=6.1.0",
+    "beautifulsoup4>=4.14.2",
+    "bleach>=6.2.0",
     "bleach-allowlist>=1.0.3",
-    "django>=5.2.3",
-    "django-registration>=3.4",
+    "django>=5.2.7",
+    "django-environ>=0.12.0",
+    "django-registration>=5.2.1",
     "django-widget-tweaks>=1.5.0",
-    "djangorestframework>=3.15.2",
-    "huey>=2.5.1",
-    "markdown>=3.7",
+    "djangorestframework>=3.16.1",
+    "gunicorn>=23.0.0",
+    "huey>=2.5.3",
+    "markdown>=3.9",
     "mozilla-django-oidc>=4.0.1",
     "python-dateutil>=2.9.0.post0",
-    "requests>=2.32.4",
+    "requests>=2.32.5",
     "supervisor>=4.3.0",
-    "uwsgi>=2.0.28",
+    "uwsgi>=2.0.31",
     "waybackpy>=3.0.6",
 ]
 
 [dependency-groups]
 dev = [
-    "black>=25.1.0",
-    "coverage>=7.10.4",
+    "black>=25.9.0",
+    "coverage>=7.10.7",
     "django-debug-toolbar>=6.0.0",
-    "playwright>=1.54.0",
-    "psycopg[binary]>=3.2.9",
-    "pytest>=8.4.1",
+    "playwright>=1.55.0",
+    "psycopg[binary]>=3.2.10",
+    "pytest>=8.4.2",
     "pytest-django>=4.11.1",
     "pytest-xdist>=3.8.0",
 ]
@@ -40,9 +42,7 @@ dev = [
 # - brew install libpq
 # - export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 # - uv add --group postgres psycopg[c]
-postgres = [
-    "psycopg[c]>=3.2.9",
-]
+postgres = ["psycopg[c]>=3.2.10"]
 
 [tool.uv]
 # Prefer system Python for now, less complications when copying the venv in the Docker build

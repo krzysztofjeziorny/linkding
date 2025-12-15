@@ -1,4 +1,4 @@
-.PHONY: serve
+.PHONY: serve install
 
 init:
 	uv sync
@@ -18,6 +18,9 @@ format:
 	uv run black bookmarks
 	npx prettier bookmarks/frontend --write
 	npx prettier bookmarks/styles --write
+
+install:
+	uv sync --no-dev --group postgres
 
 frontend:
 	npm run dev
