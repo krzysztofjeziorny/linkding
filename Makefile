@@ -1,4 +1,4 @@
-.PHONY: serve install
+.PHONY: serve
 
 init:
 	uv sync
