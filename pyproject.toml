@@ -9,8 +9,8 @@ dependencies = [
     "bleach>=6.3.0",
     "bleach-allowlist>=1.0.3",
     "django~=6.0",
+    "django-environ>=0.12.0",
     "djangorestframework>=3.16.1",
-    "environs[django]>=14.5.0",
     "gunicorn>=23.0.0",
     "huey>=2.5.5",
     "markdown>=3.10",
@@ -40,7 +40,7 @@ dev = [
 # - brew install libpq
 # - export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 # - uv add --group postgres psycopg[c]
-postgres = ["psycopg[c]>=3.3.2"]
+postgres = ["psycopg>=3.3.2"]
 
 [tool.uv]
 # Prefer system Python for now, less complications when copying the venv in the Docker build
