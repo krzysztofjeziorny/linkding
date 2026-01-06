@@ -6,7 +6,6 @@ from bookmarks.tests.helpers import BookmarkFactoryMixin
 
 
 class BookmarkNewViewTestCase(TestCase, BookmarkFactoryMixin):
-
     def setUp(self) -> None:
         user = self.get_or_create_test_user()
         self.client.force_login(user)
@@ -79,7 +78,7 @@ class BookmarkNewViewTestCase(TestCase, BookmarkFactoryMixin):
 
         self.assertInHTML(
             """
-            <input type="text" name="url" aria-invalid="false" autofocus class="form-input" required id="id_url" value="http://example.com">
+            <input type="text" name="url" aria-invalid="false" autocomplete="off" autofocus class="form-input" required id="id_url" value="http://example.com">
             """,
             html,
         )
@@ -118,8 +117,9 @@ class BookmarkNewViewTestCase(TestCase, BookmarkFactoryMixin):
 
         self.assertInHTML(
             """
-            <input type="text" name="tag_string" value="tag1 tag2 tag3" 
-                aria-describedby="id_tag_string_help" autocapitalize="off" autocomplete="off" class="form-input" id="id_tag_string">
+                <ld-tag-autocomplete input-id="id_tag_string" input-name="tag_string" input-value="tag1 tag2 tag3"
+                         input-aria-describedby="id_tag_string_help">
+                </ld-tag-autocomplete>
             """,
             html,
         )

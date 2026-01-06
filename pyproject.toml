@@ -1,6 +1,6 @@
 [project]
 name = "linkding"
-version = "1.44.2"
+version = "1.45.0"
 description = "Self-hosted bookmark manager that is designed be to be minimal, fast, and easy to set up using Docker."
 readme = "README.md"
 requires-python = ">=3.13"
@@ -8,16 +8,11 @@ dependencies = [
     "beautifulsoup4>=4.14.3",
     "bleach>=6.3.0",
     "bleach-allowlist>=1.0.3",
-    "django~=5.2",
-    "django-environ>=0.12.0",
-    "django-registration>=5.2.1",
-    "django-widget-tweaks>=1.5.0",
+    "django>=6.0",
     "djangorestframework>=3.16.1",
-    "gunicorn>=23.0.0",
     "huey>=2.5.5",
     "markdown>=3.10",
-    "mozilla-django-oidc>=4.0.1",
-    "python-dateutil>=2.9.0.post0",
+    "mozilla-django-oidc>=5.0.2",
     "requests>=2.32.5",
     "supervisor>=4.3.0",
     "uwsgi>=2.0.31",
@@ -26,14 +21,15 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "black>=25.12.0",
-    "coverage>=7.13.0",
+    "coverage>=7.13.1",
     "django-debug-toolbar>=6.1.0",
+    "djlint>=1.36.4",
     "playwright>=1.57.0",
-    "psycopg[binary]>=3.3.2",
-    "pytest>=8.4.2",
+    "psycopg[binary]>=3.2.9",
+    "pytest>=9.0.2",
     "pytest-django>=4.11.1",
     "pytest-xdist>=3.8.0",
+    "ruff>=0.14.10",
 ]
 # For PostgreSQL support, use the binary release for development so that not
 # everyone needs to build from source. For production, use a separate dependency
@@ -47,3 +43,31 @@ postgres = ["psycopg[c]>=3.3.2"]
 [tool.uv]
 # Prefer system Python for now, less complications when copying the venv in the Docker build
 python-preference = "system"
+
+[tool.djlint]
+custom_html = "ld-\\w+,ld-\\w+-\\w+"
+custom_blocks = "formhelp"
+indent = 2
+format_js = true
+profile = "django"
+
+[tool.djlint.js]
+indent_size = 2
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+# ignore line length violations
+ignore = ["E501"]

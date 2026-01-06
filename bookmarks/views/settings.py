@@ -8,21 +8,19 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import prefetch_related_objects
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
 
+from bookmarks.forms import GlobalSettingsForm, UserProfileForm
 from bookmarks.models import (
     ApiToken,
     Bookmark,
-    UserProfileForm,
     FeedToken,
     GlobalSettings,
-    GlobalSettingsForm,
 )
-from bookmarks.services import exporter, tasks
-from bookmarks.services import importer
+from bookmarks.services import exporter, importer, tasks
 from bookmarks.type_defs import HttpRequest
 from bookmarks.utils import app_version
 from bookmarks.views import access
@@ -178,18 +176,11 @@ def integrations(request):
     )
 
     feed_token = FeedToken.objects.get_or_create(user=request.user)[0]
-    all_feed_url = request.build_absolute_uri(
-        reverse("linkding:feeds.all", args=[feed_token.key])
-    )
-    unread_feed_url = request.build_absolute_uri(
-        reverse("linkding:feeds.unread", args=[feed_token.key])
-    )
-    shared_feed_url = request.build_absolute_uri(
-        reverse("linkding:feeds.shared", args=[feed_token.key])
-    )
-    public_shared_feed_url = request.build_absolute_uri(
-        reverse("linkding:feeds.public_shared")
-    )
+
+    all_feed_url = reverse("linkding:feeds.all", args=[feed_token.key])
+    unread_feed_url = reverse("linkding:feeds.unread", args=[feed_token.key])
+    shared_feed_url = reverse("linkding:feeds.shared", args=[feed_token.key])
+    public_shared_feed_url = reverse("linkding:feeds.public_shared")
 
     return render(
         request,
@@ -272,7 +263,7 @@ def bookmark_import(request: HttpRequest):
                 + " bookmarks could not be imported. Please check the logs for more details."
             )
             messages.error(request, err_msg, "settings_error_message")
-    except:
+    except Exception:
         logging.exception("Unexpected error during bookmark import")
         messages.error(
             request,
@@ -301,11 +292,12 @@ def bookmark_export(request: HttpRequest):
         response.write(file_content)
 
         return response
-    except:
-        return render(
+    except Exception:
+        return general(
             request,
-            "settings/general.html",
-            {"export_error": "An error occurred during bookmark export."},
+            context_overrides={
+                "export_error": "An error occurred during bookmark export."
+            },
         )
 
 

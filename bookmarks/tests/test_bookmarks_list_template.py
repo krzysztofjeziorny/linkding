@@ -1,22 +1,20 @@
 import datetime
-from typing import Type
 
-from dateutil.relativedelta import relativedelta
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
-from django.template import Template, RequestContext
-from django.test import TestCase, RequestFactory
+from django.template import RequestContext, Template
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
-from django.utils import timezone, formats
+from django.utils import formats, timezone
 
 from bookmarks.middlewares import LinkdingMiddleware
-from bookmarks.models import Bookmark, BookmarkSearch, UserProfile, User
+from bookmarks.models import Bookmark, BookmarkSearch, User, UserProfile
 from bookmarks.tests.helpers import BookmarkFactoryMixin, HtmlTestMixin
+from bookmarks.utils import app_version
 from bookmarks.views import contexts
 
 
 class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
-
     def assertBookmarksLink(
         self, html: str, bookmark: Bookmark, link_target: str = "_blank"
     ):
@@ -97,7 +95,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
     def assertDeleteLinkCount(self, html: str, bookmark: Bookmark, count=1):
         self.assertInHTML(
             f"""
-            <button ld-confirm-button type="submit" name="remove" value="{bookmark.id}"
+            <button data-confirm type="submit" name="remove" value="{bookmark.id}"
                class="btn btn-link btn-sm">Remove</button>
         """,
             html,
@@ -214,10 +212,10 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
 
     def assertNotesToggle(self, html: str, count=1):
         self.assertInHTML(
-            """
+            f"""
         <button type="button" class="btn btn-link btn-sm btn-icon toggle-notes">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">
-            <use xlink:href="#ld-icon-note"></use>
+          <svg width="16" height="16">
+            <use href="/static/icons.svg?v={app_version}#note"></use>
           </svg>
           Notes
         </button>      
@@ -231,9 +229,9 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
             f"""
         <button type="submit" name="unshare" value="{bookmark.id}"
                 class="btn btn-link btn-sm btn-icon"
-                ld-confirm-button ld-confirm-question="Unshare?">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">
-            <use xlink:href="#ld-icon-share"></use>
+                data-confirm data-confirm-question="Unshare?">
+          <svg width="16" height="16">
+            <use href="/static/icons.svg?v={app_version}#share"></use>
           </svg>
           Shared
         </button>    
@@ -247,9 +245,9 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
             f"""
         <button type="submit" name="mark_as_read" value="{bookmark.id}"
                 class="btn btn-link btn-sm btn-icon"
-                ld-confirm-button ld-confirm-question="Mark as read?">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">
-            <use xlink:href="#ld-icon-unread"></use>
+                data-confirm data-confirm-question="Mark as read?">
+          <svg width="16" height="16">
+            <use href="/static/icons.svg?v={app_version}#unread"></use>
           </svg>
           Unread
         </button>   
@@ -261,7 +259,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
     def render_template(
         self,
         url="/bookmarks",
-        context_type: Type[
+        context_type: type[
             contexts.BookmarkListContext
         ] = contexts.ActiveBookmarkListContext,
         user: User | AnonymousUser = None,
@@ -286,7 +284,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         self, date_display_setting: str, web_archive_url: str = ""
     ):
         bookmark = self.setup_bookmark()
-        bookmark.date_added = timezone.now() - relativedelta(days=8)
+        bookmark.date_added = timezone.now() - datetime.timedelta(days=8)
         bookmark.web_archive_snapshot_url = web_archive_url
         bookmark.save()
         user = self.get_or_create_test_user()
@@ -448,7 +446,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         soup = self.make_soup(html)
         bookmark_list = soup.select_one("ul.bookmark-list")
         style = bookmark_list["style"]
-        self.assertIn("--ld-bookmark-description-max-lines:1;", style)
+        self.assertIn("--ld-bookmark-description-max-lines:1", style)
 
         profile = self.get_or_create_test_user().profile
         profile.bookmark_description_max_lines = 3
@@ -458,7 +456,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         soup = self.make_soup(html)
         bookmark_list = soup.select_one("ul.bookmark-list")
         style = bookmark_list["style"]
-        self.assertIn("--ld-bookmark-description-max-lines:3;", style)
+        self.assertIn("--ld-bookmark-description-max-lines:3", style)
 
     def test_bookmark_tag_ordering(self):
         bookmark = self.setup_bookmark()
@@ -523,9 +521,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         user.profile.bookmark_date_display = UserProfile.BOOKMARK_DATE_DISPLAY_ABSOLUTE
         user.profile.save()
 
-        date_added = timezone.datetime(
-            2023, 8, 11, 21, 45, 11, tzinfo=datetime.timezone.utc
-        )
+        date_added = timezone.datetime(2023, 8, 11, 21, 45, 11, tzinfo=datetime.UTC)
         bookmark = self.setup_bookmark(
             url="https://example.com/article", added=date_added
         )
@@ -557,7 +553,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
 
     def test_web_archive_link_target_should_be_blank_by_default(self):
         bookmark = self.setup_bookmark()
-        bookmark.date_added = timezone.now() - relativedelta(days=8)
+        bookmark.date_added = timezone.now() - datetime.timedelta(days=8)
         bookmark.web_archive_snapshot_url = "https://example.com"
         bookmark.save()
 
@@ -573,7 +569,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         profile.save()
 
         bookmark = self.setup_bookmark()
-        bookmark.date_added = timezone.now() - relativedelta(days=8)
+        bookmark.date_added = timezone.now() - datetime.timedelta(days=8)
         bookmark.web_archive_snapshot_url = "https://example.com"
         bookmark.save()
 
@@ -613,7 +609,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         html = self.render_template()
         soup = self.make_soup(html)
 
-        list_item = soup.select_one("li[ld-bookmark-item]")
+        list_item = soup.select_one("ul.bookmark-list > li")
         self.assertIsNotNone(list_item)
         self.assertListEqual(["unread"], list_item["class"])
 
@@ -626,7 +622,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         html = self.render_template()
         soup = self.make_soup(html)
 
-        list_item = soup.select_one("li[ld-bookmark-item]")
+        list_item = soup.select_one("ul.bookmark-list > li")
         self.assertIsNotNone(list_item)
         self.assertListEqual(["shared"], list_item["class"])
 
@@ -639,7 +635,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         html = self.render_template()
         soup = self.make_soup(html)
 
-        list_item = soup.select_one("li[ld-bookmark-item]")
+        list_item = soup.select_one("ul.bookmark-list > li")
         self.assertIsNotNone(list_item)
         self.assertListEqual(["unread", "shared"], list_item["class"])
 
@@ -923,6 +919,42 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         note_html = '<p><a href="https://example.com" rel="nofollow">https://example.com</a></p>'
         self.assertNotes(html, note_html, 1)
 
+    def test_note_linkify_converts_schemeless_urls_to_https(self):
+        # Scheme-less URL should become HTTPS
+        self.setup_bookmark(notes="Example: example.com")
+        html = self.render_template()
+
+        note_html = '<p>Example: <a href="https://example.com" rel="nofollow">example.com</a></p>'
+        self.assertNotes(html, note_html, 1)
+
+        # Explicit http:// should stay as http://
+        self.setup_bookmark(notes="Example: http://example.com")
+        html = self.render_template()
+
+        note_html = '<p>Example: <a href="http://example.com" rel="nofollow">http://example.com</a></p>'
+        self.assertNotes(html, note_html, 1)
+
+        # Explicit https:// should stay as https://
+        self.setup_bookmark(notes="Example: https://example.com")
+        html = self.render_template()
+
+        note_html = '<p>Example: <a href="https://example.com" rel="nofollow">https://example.com</a></p>'
+        self.assertNotes(html, note_html, 1)
+
+        # Email addresses should not be affected
+        self.setup_bookmark(notes="Contact: hello@example.com")
+        html = self.render_template()
+
+        note_html = "<p>Contact: hello@example.com</p>"
+        self.assertNotes(html, note_html, 1)
+
+        # ftp:// should not be converted to https
+        self.setup_bookmark(notes="FTP: ftp://ftp.example.com")
+        html = self.render_template()
+
+        note_html = '<p>FTP: <a href="ftp://ftp.example.com" rel="nofollow">ftp://ftp.example.com</a></p>'
+        self.assertNotes(html, note_html, 1)
+
     def test_note_cleans_html(self):
         self.setup_bookmark(notes='<script>alert("test")</script>')
         self.setup_bookmark(
@@ -1001,7 +1033,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         profile.save()
 
         bookmark = self.setup_bookmark()
-        bookmark.date_added = timezone.now() - relativedelta(days=8)
+        bookmark.date_added = timezone.now() - datetime.timedelta(days=8)
         bookmark.web_archive_snapshot_url = (
             "https://web.archive.org/web/20230531200136/https://example.com"
         )
@@ -1086,7 +1118,7 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         html = self.render_template()
 
         soup = self.make_soup(html)
-        bookmarks = soup.select("li[ld-bookmark-item]")
+        bookmarks = soup.select("ul.bookmark-list > li")
         self.assertEqual(30, len(bookmarks))
 
     def test_items_per_page_is_configurable(self):
@@ -1097,12 +1129,12 @@ class BookmarkListTemplateTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         html = self.render_template()
 
         soup = self.make_soup(html)
-        bookmarks = soup.select("li[ld-bookmark-item]")
+        bookmarks = soup.select("ul.bookmark-list > li")
         self.assertEqual(10, len(bookmarks))
 
     def test_no_actions_rendered_when_is_preview(self):
         bookmark = self.setup_bookmark()
-        bookmark.date_added = timezone.now() - relativedelta(days=8)
+        bookmark.date_added = timezone.now() - datetime.timedelta(days=8)
         bookmark.web_archive_snapshot_url = "https://example.com"
         bookmark.save()
 

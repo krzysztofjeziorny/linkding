@@ -7,6 +7,7 @@
   --menu-item-hover-color: var(--primary-text-color);
   --menu-item-bg-color: transparent;
   --menu-item-hover-bg-color: var(--primary-color-shade);
+  --menu-item-min-width: 120px;
 }
 
 /* Menus */
@@ -17,7 +18,7 @@
   box-shadow: var(--menu-box-shadow);
   list-style: none;
   margin: 0;
-  min-width: var(--control-width-xs);
+  min-width: var(--menu-item-min-width);
   transform: translateY(var(--layout-spacing-sm));
   z-index: var(--zindex-3);
 
@@ -28,16 +29,17 @@
 
   .menu-item {
     margin-top: 0;
-    padding: 0 var(--unit-4);
+    padding: 0 var(--unit-3);
     position: relative;
     text-decoration: none;
+    white-space: nowrap;
 
     &:first-of-type {
-      padding-top: var(--unit-2);
+      padding-top: var(--unit-1);
     }
 
     &:last-of-type {
-      padding-bottom: var(--unit-2);
+      padding-bottom: var(--unit-1);
     }
 
     & > a,
@@ -91,39 +93,25 @@
   &.with-arrow {
     overflow: visible;
     --arrow-size: 16px;
-    --arrow-offset: 0px;
 
     .menu-arrow {
       display: block;
       position: absolute;
-      inset-inline-start: calc(50% + var(--arrow-offset));
       top: 0;
       width: var(--arrow-size);
       height: var(--arrow-size);
-      translate: -50% -50%;
+      translate: 0 -50%;
       rotate: 45deg;
       background: inherit;
       border: inherit;
       clip-path: polygon(0 0, 0 100%, 100% 0);
     }
 
-    &.top-aligned {
-      transform: translateY(
-        calc(calc(var(--arrow-size) / 2) + var(--layout-spacing-sm))
-      );
-    }
-
-    &.bottom-aligned {
-      transform: translateY(
-        calc(calc(calc(var(--arrow-size) / 2) + var(--layout-spacing-sm)) * -1)
-      );
-
-      .menu-arrow {
-        top: auto;
-        bottom: 0;
-        rotate: 225deg;
-        translate: -50% 50%;
-      }
+    &.top-aligned .menu-arrow {
+      top: auto;
+      bottom: 0;
+      rotate: 225deg;
+      translate: 0 50%;
     }
   }
 }

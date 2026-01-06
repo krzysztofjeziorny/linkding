@@ -1,12 +1,11 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from bookmarks.tests.helpers import BookmarkFactoryMixin, HtmlTestMixin
 from bookmarks.models import ApiToken, FeedToken
+from bookmarks.tests.helpers import BookmarkFactoryMixin, HtmlTestMixin
 
 
 class SettingsIntegrationsViewTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
-
     def setUp(self) -> None:
         user = self.get_or_create_test_user()
         self.client.force_login(user)
@@ -134,18 +133,18 @@ class SettingsIntegrationsViewTestCase(TestCase, BookmarkFactoryMixin, HtmlTestM
 
         token = FeedToken.objects.first()
         self.assertInHTML(
-            f'<a target="_blank" href="http://testserver/feeds/{token.key}/all">All bookmarks</a>',
+            f'<a target="_blank" href="/feeds/{token.key}/all">All bookmarks</a>',
             html,
         )
         self.assertInHTML(
-            f'<a target="_blank" href="http://testserver/feeds/{token.key}/unread">Unread bookmarks</a>',
+            f'<a target="_blank" href="/feeds/{token.key}/unread">Unread bookmarks</a>',
             html,
         )
         self.assertInHTML(
-            f'<a target="_blank" href="http://testserver/feeds/{token.key}/shared">Shared bookmarks</a>',
+            f'<a target="_blank" href="/feeds/{token.key}/shared">Shared bookmarks</a>',
             html,
         )
         self.assertInHTML(
-            '<a target="_blank" href="http://testserver/feeds/shared">Public shared bookmarks</a>',
+            '<a target="_blank" href="/feeds/shared">Public shared bookmarks</a>',
             html,
         )

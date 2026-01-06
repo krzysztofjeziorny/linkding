@@ -1,18 +1,65 @@
+import os
+
 from django.contrib.staticfiles.testing import LiveServerTestCase
-from playwright.sync_api import BrowserContext, Playwright, Page
-from playwright.sync_api import expect
+from playwright.sync_api import BrowserContext, Page, expect, sync_playwright
 
 from bookmarks.tests.helpers import BookmarkFactoryMixin
+
+SCREENSHOT_DIR = "test-results/screenshots"
+
+# Allow Django ORM operations within Playwright's async context
+os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 
 
 class LinkdingE2ETestCase(LiveServerTestCase, BookmarkFactoryMixin):
     def setUp(self) -> None:
         self.client.force_login(self.get_or_create_test_user())
         self.cookie = self.client.cookies["sessionid"]
+        self.playwright = None
+        self.browser = None
+        self.context = None
+        self.page = None
 
-    def setup_browser(self, playwright) -> BrowserContext:
-        browser = playwright.chromium.launch(headless=True)
-        context = browser.new_context()
+    def tearDown(self) -> None:
+        if self.page and self._test_has_failed():
+            self._capture_screenshot()
+        if self.browser:
+            self.browser.close()
+        if self.playwright:
+            self.playwright.stop()
+        super().tearDown()
+
+    def _test_has_failed(self) -> bool:
+        """Detect if the current test has failed. Works with both Django/unittest and pytest."""
+        # Check _outcome for failure info
+        if self._outcome is not None:
+            result = self._outcome.result
+            if result:
+                # pytest stores exception info in _excinfo
+                if hasattr(result, "_excinfo") and result._excinfo:
+                    return True
+                # Django/unittest stores failures and errors in the result
+                # Check if THIS test is in failures/errors (not just any test)
+                if hasattr(result, "failures"):
+                    for failed_test, _ in result.failures:
+                        if failed_test is self:
+                            return True
+        return False
+
+    def _ensure_playwright(self):
+        if not self.playwright:
+            self.playwright = sync_playwright().start()
+            self.browser = self.playwright.chromium.launch(headless=True)
+
+    def _capture_screenshot(self):
+        os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+        filename = f"{self.__class__.__name__}_{self._testMethodName}.png"
+        filepath = os.path.join(SCREENSHOT_DIR, filename)
+        self.page.screenshot(path=filepath, full_page=True)
+
+    def setup_browser(self) -> BrowserContext:
+        self._ensure_playwright()
+        context = self.browser.new_context()
         context.add_cookies(
             [
                 {
@@ -25,13 +72,19 @@ class LinkdingE2ETestCase(LiveServerTestCase, BookmarkFactoryMixin):
         )
         return context
 
-    def open(self, url: str, playwright: Playwright) -> Page:
-        browser = self.setup_browser(playwright)
-        self.page = browser.new_page()
+    def open(self, url: str) -> Page:
+        self.context = self.setup_browser()
+        self.page = self.context.new_page()
+        self.page.on("pageerror", self.on_page_error)
         self.page.goto(self.live_server_url + url)
         self.page.on("load", self.on_load)
         self.num_loads = 0
         return self.page
+
+    def on_page_error(self, error):
+        print(f"[JS ERROR] {error}")
+        if hasattr(error, "stack"):
+            print(f"[JS STACK] {error.stack}")
 
     def on_load(self):
         self.num_loads += 1
@@ -43,18 +96,18 @@ class LinkdingE2ETestCase(LiveServerTestCase, BookmarkFactoryMixin):
         self.num_loads = 0
 
     def locate_bookmark_list(self):
-        return self.page.locator("ul[ld-bookmark-list]")
+        return self.page.locator("ul.bookmark-list")
 
     def locate_bookmark(self, title: str):
-        bookmark_tags = self.page.locator("li[ld-bookmark-item]")
+        bookmark_tags = self.page.locator("ul.bookmark-list > li")
         return bookmark_tags.filter(has_text=title)
 
     def count_bookmarks(self):
-        bookmark_tags = self.page.locator("li[ld-bookmark-item]")
+        bookmark_tags = self.page.locator("ul.bookmark-list > li")
         return bookmark_tags.count()
 
     def locate_details_modal(self):
-        return self.page.locator(".modal.bookmark-details")
+        return self.page.locator("ld-details-modal")
 
     def open_details_modal(self, bookmark):
         details_button = self.locate_bookmark(bookmark.title).get_by_text("View")
@@ -94,4 +147,4 @@ class LinkdingE2ETestCase(LiveServerTestCase, BookmarkFactoryMixin):
             self.page.locator("nav").get_by_text(main_menu_item, exact=True).click()
 
     def locate_confirm_dialog(self):
-        return self.page.locator(".dropdown.confirm-dropdown")
+        return self.page.locator("ld-confirm-dropdown")

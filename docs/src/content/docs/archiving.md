@@ -11,6 +11,10 @@ Linkding can automatically create HTML snapshots whenever a bookmark is added. T
 
 The snapshots are created using [singlefile-cli](https://github.com/gildas-lormeau/single-file-cli), which effectively runs a headless Chromium instance on the server to convert the web page into a single HTML file. Linkding will also load the [uBlock Origin Lite extension](https://github.com/uBlockOrigin/uBOL-home) into Chromium to attempt to block ads and other unwanted content.
 
+<!--
+When bookmarking a URL that points directly to a PDF file, linkding will download the PDF instead of creating an HTML snapshot. This happens automatically based on the content type of the URL, and the downloaded PDF will be stored as an asset alongside the bookmark, just like HTML snapshots.
+-->
+
 This method is fairly easy to set up, but also has several downsides:
 - The Docker image is significantly larger than the base image, as it includes a Chromium installation.
 - Running Chromium requires significantly more memory, at least 1 GB of RAM.
@@ -52,3 +56,11 @@ To integrate with the Singlefile extension, follow these steps:
 Now, when you add a bookmark through the linkding extension, it will automatically trigger the Singlefile extension to create a snapshot of the web page, which will then be uploaded to your linkding installation and stored under the newly added bookmark.
 
 Note that when the option is enabled, linkding will not attempt to create an HTML snapshot on the server, even if you are using the `latest-plus` Docker image. The linkding extension will not trigger Singlefile when updating an existing bookmark. If you want to create a new snapshot for an existing bookmark, you can do so manually by clicking the Singlefile extension icon.
+
+### Extension Store Compatibility
+
+The linkding and Singlefile extensions communicate using store-specific extension IDs. For the integration to work, both extensions must be installed from the same browser extension store. For example:
+- If you install linkding from the Chrome Web Store, install Singlefile from the Chrome Web Store as well
+- If you install linkding from Firefox Add-ons, install Singlefile from Firefox Add-ons as well
+
+This is particularly relevant for Microsoft Edge users, as Edge can install extensions from both the Chrome Web Store and the Microsoft Edge Add-ons store. If the extensions are installed from different stores, the automatic Singlefile integration will not work.

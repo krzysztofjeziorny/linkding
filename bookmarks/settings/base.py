@@ -29,6 +29,13 @@ DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
+USE_X_FORWARDED_HOST = os.getenv("LD_USE_X_FORWARDED_HOST", False) in (
+    True,
+    "True",
+    "true",
+    "1",
+)
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -39,7 +46,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "widget_tweaks",
     "rest_framework",
     "rest_framework.authtoken",
     "huey.contrib.djhuey",
@@ -137,9 +143,6 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 100,
 }
 
-# Registration switch
-ALLOW_REGISTRATION = False
-
 # URL validation flag
 LD_DISABLE_URL_VALIDATION = os.getenv("LD_DISABLE_URL_VALIDATION", False) in (
     True,
@@ -177,6 +180,13 @@ HUEY = {
     },
 }
 
+# Disable login form if configured
+LD_DISABLE_LOGIN_FORM = os.getenv("LD_DISABLE_LOGIN_FORM", False) in (
+    True,
+    "True",
+    "true",
+    "1",
+)
 
 # Enable OICD support if configured
 LD_ENABLE_OIDC = os.getenv("LD_ENABLE_OIDC", False) in (True, "True", "true", "1")
@@ -317,6 +327,7 @@ LD_SINGLEFILE_UBLOCK_OPTIONS = os.getenv(
 )
 LD_SINGLEFILE_OPTIONS = os.getenv("LD_SINGLEFILE_OPTIONS", "")
 LD_SINGLEFILE_TIMEOUT_SEC = float(os.getenv("LD_SINGLEFILE_TIMEOUT_SEC", 120))
+LD_SNAPSHOT_PDF_MAX_SIZE = int(os.getenv("LD_SNAPSHOT_PDF_MAX_SIZE", 15728640))  # 15MB
 
 # Monolith isn't used at the moment, as the local snapshot implementation
 # switched to single-file after the prototype. Keeping this around in case

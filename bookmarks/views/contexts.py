@@ -1,6 +1,5 @@
 import re
 import urllib.parse
-from typing import Set, List
 
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -8,22 +7,22 @@ from django.db import models
 from django.http import Http404
 from django.urls import reverse
 
-from bookmarks import queries
-from bookmarks import utils
+from bookmarks import queries, utils
+from bookmarks.forms import BookmarkSearchForm
 from bookmarks.models import (
     Bookmark,
     BookmarkAsset,
     BookmarkBundle,
     BookmarkSearch,
+    Tag,
     User,
     UserProfile,
-    Tag,
 )
 from bookmarks.services.search_query_parser import (
-    parse_search_query,
-    strip_tag_from_query,
     OrExpression,
     SearchQueryParseError,
+    parse_search_query,
+    strip_tag_from_query,
 )
 from bookmarks.services.wayback import generate_fallback_webarchive_url
 from bookmarks.type_defs import HttpRequest
@@ -266,14 +265,26 @@ class BookmarkListContext:
 
 
 class ActiveBookmarkListContext(BookmarkListContext):
+    list_title = "Bookmarks"
+    search_mode = ""
+    bulk_edit_enabled = True
+    bulk_edit_disabled_actions = "bulk_unarchive"
     request_context = ActiveBookmarksContext
 
 
 class ArchivedBookmarkListContext(BookmarkListContext):
+    list_title = "Archived bookmarks"
+    search_mode = "archived"
+    bulk_edit_enabled = True
+    bulk_edit_disabled_actions = "bulk_archive"
     request_context = ArchivedBookmarksContext
 
 
 class SharedBookmarkListContext(BookmarkListContext):
+    list_title = "Shared bookmarks"
+    search_mode = "shared"
+    bulk_edit_enabled = False
+    bulk_edit_disabled_actions = ""
     request_context = SharedBookmarksContext
 
 
@@ -398,7 +409,7 @@ class TagGroup:
         self.tags.append(AddTagItem(self.context, tag))
 
     @staticmethod
-    def create_tag_groups(context: RequestContext, mode: str, tags: Set[Tag]):
+    def create_tag_groups(context: RequestContext, mode: str, tags: set[Tag]):
         if mode == UserProfile.TAG_GROUPING_ALPHABETICAL:
             return TagGroup._create_tag_groups_alphabetical(context, tags)
         elif mode == UserProfile.TAG_GROUPING_DISABLED:
@@ -407,7 +418,7 @@ class TagGroup:
             raise ValueError(f"{mode} is not a valid tag grouping mode")
 
     @staticmethod
-    def _create_tag_groups_alphabetical(context: RequestContext, tags: Set[Tag]):
+    def _create_tag_groups_alphabetical(context: RequestContext, tags: set[Tag]):
         # Ensure groups, as well as tags within groups, are ordered alphabetically
         sorted_tags = sorted(tags, key=lambda x: str.lower(x.name))
         group = None
@@ -434,7 +445,7 @@ class TagGroup:
         return groups
 
     @staticmethod
-    def _create_tag_groups_disabled(context: RequestContext, tags: Set[Tag]):
+    def _create_tag_groups_disabled(context: RequestContext, tags: set[Tag]):
         if len(tags) == 0:
             return []
 
@@ -481,7 +492,7 @@ class TagCloudContext:
     def get_selected_tags(self):
         raise NotImplementedError("Must be implemented by subclass")
 
-    def get_selected_tags_legacy(self, tags: List[Tag]):
+    def get_selected_tags_legacy(self, tags: list[Tag]):
         parsed_query = queries.parse_query_string(self.search.q)
         tag_names = parsed_query["tag_names"]
         if self.request.user_profile.tag_search == UserProfile.TAG_SEARCH_LAX:
@@ -649,3 +660,13 @@ class BundlesContext:
             (bundle for bundle in self.bundles if bundle.id == selected_bundle_id),
             None,
         )
+
+
+class UserListContext:
+    def __init__(self, request: HttpRequest, search: BookmarkSearch) -> None:
+        public_only = not request.user.is_authenticated
+        users = queries.query_shared_bookmark_users(
+            request.user_profile, search, public_only
+        )
+        users = sorted(users, key=lambda x: str.lower(x.username))
+        self.form = BookmarkSearchForm(search, editable_fields=["user"], users=users)

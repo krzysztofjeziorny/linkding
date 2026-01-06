@@ -1,34 +1,33 @@
+import datetime
 from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils import timezone
 
 from bookmarks.models import Bookmark, Tag
-from bookmarks.services import tasks
-from bookmarks.services import website_loader
+from bookmarks.services import tasks, website_loader
 from bookmarks.services.bookmarks import (
-    create_bookmark,
-    update_bookmark,
     archive_bookmark,
     archive_bookmarks,
-    unarchive_bookmark,
-    unarchive_bookmarks,
+    create_bookmark,
+    create_html_snapshots,
     delete_bookmarks,
-    tag_bookmarks,
-    untag_bookmarks,
+    enhance_with_website_metadata,
     mark_bookmarks_as_read,
     mark_bookmarks_as_unread,
-    share_bookmarks,
-    unshare_bookmarks,
-    enhance_with_website_metadata,
     refresh_bookmarks_metadata,
-    create_html_snapshots,
+    share_bookmarks,
+    tag_bookmarks,
+    unarchive_bookmark,
+    unarchive_bookmarks,
+    unshare_bookmarks,
+    untag_bookmarks,
+    update_bookmark,
 )
 from bookmarks.tests.helpers import BookmarkFactoryMixin
 
 
 class BookmarkServiceTestCase(TestCase, BookmarkFactoryMixin):
-
     def setUp(self) -> None:
         self.get_or_create_test_user()
 
@@ -227,6 +226,48 @@ class BookmarkServiceTestCase(TestCase, BookmarkFactoryMixin):
         bookmark = create_bookmark(bookmark_data, tag1.name, self.user)
 
         self.assertCountEqual(bookmark.tags.all(), [tag1, tag2])
+
+    def test_create_should_set_default_dates(self):
+        with patch("bookmarks.services.bookmarks.timezone.now") as mock_now:
+            fixed_time = timezone.make_aware(datetime.datetime(2024, 1, 15, 12, 0, 0))
+            mock_now.return_value = fixed_time
+
+            bookmark_data = Bookmark(url="https://example.com")
+            bookmark = create_bookmark(bookmark_data, "", self.user)
+
+            bookmark.refresh_from_db()
+            self.assertEqual(bookmark.date_added, fixed_time)
+            self.assertEqual(bookmark.date_modified, fixed_time)
+
+    def test_create_should_use_provided_date_added(self):
+        custom_date = timezone.now() - datetime.timedelta(days=30)
+        bookmark_data = Bookmark(url="https://example.com", date_added=custom_date)
+        bookmark = create_bookmark(bookmark_data, "", self.user)
+
+        bookmark.refresh_from_db()
+        self.assertEqual(bookmark.date_added, custom_date)
+
+    def test_create_should_use_provided_date_modified(self):
+        custom_date = timezone.now() - datetime.timedelta(days=15)
+        bookmark_data = Bookmark(url="https://example.com", date_modified=custom_date)
+        bookmark = create_bookmark(bookmark_data, "", self.user)
+
+        bookmark.refresh_from_db()
+        self.assertEqual(bookmark.date_modified, custom_date)
+
+    def test_create_should_use_provided_dates(self):
+        custom_date_added = timezone.now() - datetime.timedelta(days=30)
+        custom_date_modified = timezone.now() - datetime.timedelta(days=15)
+        bookmark_data = Bookmark(
+            url="https://example.com",
+            date_added=custom_date_added,
+            date_modified=custom_date_modified,
+        )
+        bookmark = create_bookmark(bookmark_data, "", self.user)
+
+        bookmark.refresh_from_db()
+        self.assertEqual(bookmark.date_added, custom_date_added)
+        self.assertEqual(bookmark.date_modified, custom_date_modified)
 
     def test_update_should_create_web_archive_snapshot_if_url_did_change(self):
         with patch.object(

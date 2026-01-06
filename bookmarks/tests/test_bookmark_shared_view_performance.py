@@ -11,7 +11,6 @@ from bookmarks.tests.helpers import BookmarkFactoryMixin, HtmlTestMixin
 class BookmarkSharedViewPerformanceTestCase(
     TransactionTestCase, BookmarkFactoryMixin, HtmlTestMixin
 ):
-
     def setUp(self) -> None:
         user = self.get_or_create_test_user()
         self.client.force_login(user)
@@ -35,7 +34,7 @@ class BookmarkSharedViewPerformanceTestCase(
             response = self.client.get(reverse("linkding:bookmarks.shared"))
             html = response.content.decode("utf-8")
             soup = self.make_soup(html)
-            list_items = soup.select("li[ld-bookmark-item]")
+            list_items = soup.select("ul.bookmark-list > li")
             self.assertEqual(len(list_items), num_initial_bookmarks)
 
         number_of_queries = context.final_queries
@@ -51,7 +50,7 @@ class BookmarkSharedViewPerformanceTestCase(
             response = self.client.get(reverse("linkding:bookmarks.shared"))
             html = response.content.decode("utf-8")
             soup = self.make_soup(html)
-            list_items = soup.select("li[ld-bookmark-item]")
+            list_items = soup.select("ul.bookmark-list > li")
             self.assertEqual(
                 len(list_items), num_initial_bookmarks + num_additional_bookmarks
             )

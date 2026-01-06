@@ -5,7 +5,6 @@ from bookmarks.tests.helpers import BookmarkFactoryMixin, HtmlTestMixin
 
 
 class BundlePreviewViewTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
-
     def setUp(self) -> None:
         user = self.get_or_create_test_user()
         self.client.force_login(user)
@@ -77,7 +76,7 @@ class BundlePreviewViewTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         response = self.client.get(reverse("linkding:bundles.preview"))
         soup = self.make_soup(response.content.decode())
 
-        list_item = soup.select_one("li[ld-bookmark-item]")
+        list_item = soup.select_one("ul.bookmark-list > li")
         actions = list_item.select(".actions > *")
         self.assertEqual(len(actions), 1)
 

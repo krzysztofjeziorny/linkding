@@ -1,18 +1,17 @@
+import datetime
 import logging
 import re
 import unicodedata
 import urllib.parse
-import datetime
-from typing import Optional
+from dataclasses import dataclass
 
-from dateutil.relativedelta import relativedelta
+from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.template.defaultfilters import pluralize
-from django.utils import timezone, formats
-from django.conf import settings
+from django.utils import formats, timezone
 
 try:
-    with open("version.txt", "r") as f:
+    with open("version.txt") as f:
         app_version = f.read().strip("\n")
 except Exception as exc:
     logging.exception(exc)
@@ -34,13 +33,40 @@ weekday_names = {
 }
 
 
+@dataclass
+class DateDelta:
+    years: int
+    months: int
+    weeks: int
+
+
+def _calculate_date_delta(
+    now: datetime.datetime, value: datetime.datetime
+) -> DateDelta:
+    """Calculate the difference between two datetimes in years, months, and weeks."""
+    # Full calendar years
+    years = now.year - value.year
+    if (now.month, now.day) < (value.month, value.day):
+        years -= 1
+
+    # Full calendar months
+    months = (now.year - value.year) * 12 + (now.month - value.month)
+    if now.day < value.day:
+        months -= 1
+
+    # Weeks from total days
+    weeks = (now - value).days // 7
+
+    return DateDelta(years=max(0, years), months=max(0, months), weeks=max(0, weeks))
+
+
 def humanize_absolute_date(
-    value: datetime.datetime, now: Optional[datetime.datetime] = None
+    value: datetime.datetime, now: datetime.datetime | None = None
 ):
     if not now:
         now = timezone.now()
-    delta = relativedelta(now, value)
-    yesterday = now - relativedelta(days=1)
+    delta = _calculate_date_delta(now, value)
+    yesterday = now - datetime.timedelta(days=1)
 
     is_older_than_a_week = delta.years > 0 or delta.months > 0 or delta.weeks > 0
 
@@ -55,11 +81,11 @@ def humanize_absolute_date(
 
 
 def humanize_relative_date(
-    value: datetime.datetime, now: Optional[datetime.datetime] = None
+    value: datetime.datetime, now: datetime.datetime | None = None
 ):
     if not now:
         now = timezone.now()
-    delta = relativedelta(now, value)
+    delta = _calculate_date_delta(now, value)
 
     if delta.years > 0:
         return f"{delta.years} year{pluralize(delta.years)} ago"
@@ -68,7 +94,7 @@ def humanize_relative_date(
     elif delta.weeks > 0:
         return f"{delta.weeks} week{pluralize(delta.weeks)} ago"
     else:
-        yesterday = now - relativedelta(days=1)
+        yesterday = now - datetime.timedelta(days=1)
         if value.day == now.day:
             return "Today"
         elif value.day == yesterday.day:
@@ -89,7 +115,7 @@ def parse_timestamp(value: str):
     try:
         timestamp = int(value)
     except ValueError:
-        raise ValueError(f"{value} is not a valid timestamp")
+        raise ValueError(f"{value} is not a valid timestamp") from None
 
     try:
         return datetime.datetime.fromtimestamp(timestamp, datetime.UTC)

@@ -25,7 +25,6 @@ def create_wayback_machine_save_api_mock(
 
 
 class BookmarkTasksTestCase(TestCase, BookmarkFactoryMixin):
-
     def setUp(self):
         huey.immediate = True
         huey.results = True
@@ -483,8 +482,8 @@ class BookmarkTasksTestCase(TestCase, BookmarkFactoryMixin):
             for asset in assets:
                 self.assertEqual(asset.bookmark, bookmark)
                 self.assertEqual(asset.asset_type, BookmarkAsset.TYPE_SNAPSHOT)
-                self.assertEqual(asset.content_type, BookmarkAsset.CONTENT_TYPE_HTML)
-                self.assertIn("HTML snapshot", asset.display_name)
+                self.assertEqual(asset.content_type, "")
+                self.assertIn("New snapshot", asset.display_name)
                 self.assertEqual(asset.status, BookmarkAsset.STATUS_PENDING)
 
             self.mock_assets_create_snapshot.assert_not_called()

@@ -1,4 +1,4 @@
-from django.db.models import Max, prefetch_related_objects
+from django.db.models import prefetch_related_objects
 from django.templatetags.static import static
 from rest_framework import serializers
 from rest_framework.serializers import ListSerializer
@@ -6,10 +6,10 @@ from rest_framework.serializers import ListSerializer
 from bookmarks.models import (
     Bookmark,
     BookmarkAsset,
-    Tag,
-    build_tag_string,
-    UserProfile,
     BookmarkBundle,
+    Tag,
+    UserProfile,
+    build_tag_string,
 )
 from bookmarks.services import bookmarks, bundles
 from bookmarks.services.tags import get_or_create_tag
@@ -56,7 +56,7 @@ class BookmarkBundleSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         bundle = BookmarkBundle(**validated_data)
-        bundle.order = validated_data["order"] if "order" in validated_data else None
+        bundle.order = validated_data.get("order", None)
         return bundles.create_bundle(bundle, self.context["user"])
 
 
@@ -86,8 +86,6 @@ class BookmarkSerializer(serializers.ModelSerializer):
             "favicon_url",
             "preview_image_url",
             "tag_names",
-            "date_added",
-            "date_modified",
             "website_title",
             "website_description",
         ]
@@ -102,6 +100,9 @@ class BookmarkSerializer(serializers.ModelSerializer):
     # Add dummy website title and description fields for backwards compatibility but keep them empty
     website_title = EmtpyField()
     website_description = EmtpyField()
+    # these are optional
+    date_added = serializers.DateTimeField(required=False)
+    date_modified = serializers.DateTimeField(required=False)
 
     def get_favicon_url(self, obj: Bookmark):
         if not obj.favicon_file:

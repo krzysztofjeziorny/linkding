@@ -20,9 +20,6 @@
 }
 
 .form-group {
-  &:first-of-type {
-    margin-top: var(--unit-4);
-  }
   &:not(:last-child) {
     margin-bottom: var(--unit-4);
   }
@@ -136,6 +133,10 @@ textarea.form-input {
 
   .has-error &,
   .is-error + & {
+    color: var(--error-color);
+  }
+
+  &.is-error {
     color: var(--error-color);
   }
 }

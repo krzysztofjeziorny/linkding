@@ -81,10 +81,12 @@ def _load_website_metadata(url: str):
 
         end = timezone.now()
         logger.debug(f"Parsing duration: {end - start}")
-    finally:
-        return WebsiteMetadata(
-            url=url, title=title, description=description, preview_image=preview_image
-        )
+    except Exception:
+        pass
+
+    return WebsiteMetadata(
+        url=url, title=title, description=description, preview_image=preview_image
+    )
 
 
 CHUNK_SIZE = 50 * 1024
@@ -101,15 +103,12 @@ def load_page(url: str):
         for chunk in r.iter_content(chunk_size=CHUNK_SIZE):
             size += len(chunk)
             iteration = iteration + 1
-            if content is None:
-                content = chunk
-            else:
-                content = content + chunk
+            content = chunk if content is None else content + chunk
 
             logger.debug(f"Loaded chunk (iteration={iteration}, total={size / 1024})")
 
             # Stop reading if we have parsed end of head tag
-            end_of_head = "</head>".encode("utf-8")
+            end_of_head = b"</head>"
             if end_of_head in content:
                 logger.debug(f"Found closing head tag after {size} bytes")
                 content = content.split(end_of_head)[0] + end_of_head
@@ -140,3 +139,42 @@ def fake_request_headers():
         "Upgrade-Insecure-Requests": "1",
         "User-Agent": DEFAULT_USER_AGENT,
     }
+
+
+def detect_content_type(url: str, timeout: int = 10) -> str | None:
+    """Make HEAD request to detect content type of URL. Returns None on failure."""
+    headers = fake_request_headers()
+
+    try:
+        response = requests.head(
+            url, headers=headers, timeout=timeout, allow_redirects=True
+        )
+        if response.status_code == 200:
+            return (
+                response.headers.get("Content-Type", "").split(";")[0].strip().lower()
+            )
+    except requests.RequestException:
+        pass
+
+    try:
+        with requests.get(
+            url, headers=headers, timeout=timeout, stream=True, allow_redirects=True
+        ) as response:
+            if response.status_code == 200:
+                return (
+                    response.headers.get("Content-Type", "")
+                    .split(";")[0]
+                    .strip()
+                    .lower()
+                )
+    except requests.RequestException:
+        pass
+
+    return None
+
+
+def is_pdf_content_type(content_type: str | None) -> bool:
+    """Check if the content type indicates a PDF."""
+    if not content_type:
+        return False
+    return content_type in ("application/pdf", "application/x-pdf")

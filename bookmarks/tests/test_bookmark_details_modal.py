@@ -24,17 +24,17 @@ class BookmarkDetailsModalTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin
         url = reverse("linkding:bookmarks.index") + f"?details={bookmark.id}"
         response = self.client.get(url)
         soup = self.make_soup(response.content.decode())
-        return soup.select_one("div.modal.bookmark-details")
+        return soup.select_one("ld-details-modal")
 
     def get_shared_details_modal(self, bookmark):
         url = reverse("linkding:bookmarks.shared") + f"?details={bookmark.id}"
         response = self.client.get(url)
         soup = self.make_soup(response.content.decode())
-        return soup.select_one("div.modal.bookmark-details")
+        return soup.select_one("ld-details-modal")
 
     def has_details_modal(self, response):
         soup = self.make_soup(response.content.decode())
-        return soup.select_one("div.modal.bookmark-details") is not None
+        return soup.select_one("ld-details-modal") is not None
 
     def find_section_content(self, soup, section_name):
         h3 = soup.find("h3", string=section_name)
@@ -262,9 +262,7 @@ class BookmarkDetailsModalTestCase(TestCase, BookmarkFactoryMixin, HtmlTestMixin
         self.assertIsNotNone(image)
 
     def test_internet_archive_link_with_fallback_url(self):
-        date_added = timezone.datetime(
-            2023, 8, 11, 21, 45, 11, tzinfo=datetime.timezone.utc
-        )
+        date_added = timezone.datetime(2023, 8, 11, 21, 45, 11, tzinfo=datetime.UTC)
         bookmark = self.setup_bookmark(url="https://example.com/", added=date_added)
         fallback_web_archive_url = (
             "https://web.archive.org/web/20230811214511/https://example.com/"

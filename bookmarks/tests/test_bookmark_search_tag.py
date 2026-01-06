@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
-from django.template import Template, RequestContext
-from django.test import TestCase, RequestFactory
+from django.template import RequestContext, Template
+from django.test import RequestFactory, TestCase
 
 from bookmarks.models import BookmarkSearch
 from bookmarks.tests.helpers import BookmarkFactoryMixin, HtmlTestMixin
@@ -38,11 +38,11 @@ class BookmarkSearchTagTest(TestCase, BookmarkFactoryMixin, HtmlTestMixin):
         self.assertIsNone(element)
 
     def assertSearchInput(self, form: BeautifulSoup, name: str, value: str = None):
-        element = form.select_one(f'input[name="{name}"][type="search"]')
+        element = form.select_one(f'ld-search-autocomplete[input-name="{name}"]')
         self.assertIsNotNone(element)
 
         if value is not None:
-            self.assertEqual(element["value"], value)
+            self.assertEqual(element["input-value"], value)
 
     def assertSelect(self, form: BeautifulSoup, name: str, value: str = None):
         select = form.select_one(f'select[name="{name}"]')

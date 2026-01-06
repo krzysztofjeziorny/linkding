@@ -1,20 +1,18 @@
+import binascii
 import hashlib
 import logging
 import os
-from typing import List
 
-import binascii
-from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.http import QueryDict
 
-from bookmarks.utils import unique, normalize_url
+from bookmarks.utils import normalize_url, unique
 from bookmarks.validators import BookmarkURLValidator
 
 logger = logging.getLogger(__name__)
@@ -48,7 +46,7 @@ def parse_tag_string(tag_string: str, delimiter: str = ","):
     return names
 
 
-def build_tag_string(tag_names: List[str], delimiter: str = ","):
+def build_tag_string(tag_names: list[str], delimiter: str = ","):
     return delimiter.join(tag_names)
 
 
@@ -133,6 +131,7 @@ class BookmarkAsset(models.Model):
     TYPE_UPLOAD = "upload"
 
     CONTENT_TYPE_HTML = "text/html"
+    CONTENT_TYPE_PDF = "application/pdf"
 
     STATUS_PENDING = "pending"
     STATUS_COMPLETE = "complete"
@@ -150,11 +149,11 @@ class BookmarkAsset(models.Model):
 
     @property
     def download_name(self):
-        return (
-            f"{self.display_name}.html"
-            if self.asset_type == BookmarkAsset.TYPE_SNAPSHOT
-            else self.display_name
-        )
+        if self.asset_type == BookmarkAsset.TYPE_SNAPSHOT:
+            if self.content_type == BookmarkAsset.CONTENT_TYPE_PDF:
+                return f"{self.display_name}.pdf"
+            return f"{self.display_name}.html"
+        return self.display_name
 
     def save(self, *args, **kwargs):
         if self.file:
@@ -194,12 +193,6 @@ class BookmarkBundle(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class BookmarkBundleForm(forms.ModelForm):
-    class Meta:
-        model = BookmarkBundle
-        fields = ["name", "search", "any_tags", "all_tags", "excluded_tags"]
 
 
 class BookmarkSearch:
@@ -322,64 +315,6 @@ class BookmarkSearch:
         return BookmarkSearch(
             **initial_values, preferences=preferences, request=request
         )
-
-
-class BookmarkSearchForm(forms.Form):
-    SORT_CHOICES = [
-        (BookmarkSearch.SORT_ADDED_ASC, "Added ↑"),
-        (BookmarkSearch.SORT_ADDED_DESC, "Added ↓"),
-        (BookmarkSearch.SORT_TITLE_ASC, "Title ↑"),
-        (BookmarkSearch.SORT_TITLE_DESC, "Title ↓"),
-    ]
-    FILTER_SHARED_CHOICES = [
-        (BookmarkSearch.FILTER_SHARED_OFF, "Off"),
-        (BookmarkSearch.FILTER_SHARED_SHARED, "Shared"),
-        (BookmarkSearch.FILTER_SHARED_UNSHARED, "Unshared"),
-    ]
-    FILTER_UNREAD_CHOICES = [
-        (BookmarkSearch.FILTER_UNREAD_OFF, "Off"),
-        (BookmarkSearch.FILTER_UNREAD_YES, "Unread"),
-        (BookmarkSearch.FILTER_UNREAD_NO, "Read"),
-    ]
-
-    q = forms.CharField()
-    user = forms.ChoiceField(required=False)
-    bundle = forms.CharField(required=False)
-    sort = forms.ChoiceField(choices=SORT_CHOICES)
-    shared = forms.ChoiceField(choices=FILTER_SHARED_CHOICES, widget=forms.RadioSelect)
-    unread = forms.ChoiceField(choices=FILTER_UNREAD_CHOICES, widget=forms.RadioSelect)
-    modified_since = forms.CharField(required=False)
-    added_since = forms.CharField(required=False)
-
-    def __init__(
-        self,
-        search: BookmarkSearch,
-        editable_fields: List[str] = None,
-        users: List[User] = None,
-    ):
-        super().__init__()
-        editable_fields = editable_fields or []
-        self.editable_fields = editable_fields
-
-        # set choices for user field if users are provided
-        if users:
-            user_choices = [(user.username, user.username) for user in users]
-            user_choices.insert(0, ("", "Everyone"))
-            self.fields["user"].choices = user_choices
-
-        for param in search.params:
-            # set initial values for modified params
-            value = search.__dict__.get(param)
-            if isinstance(value, models.Model):
-                self.fields[param].initial = value.id
-            else:
-                self.fields[param].initial = value
-
-            # Mark non-editable modified fields as hidden. That way, templates
-            # rendering a form can just loop over hidden_fields to ensure that
-            # all necessary search options are kept when submitting the form.
-            if search.is_modified(param) and param not in editable_fields:
-                self.fields[param].widget = forms.HiddenInput()
 
 
 class UserProfile(models.Model):
@@ -508,41 +443,6 @@ class UserProfile(models.Model):
         super().save(*args, **kwargs)
 
 
-class UserProfileForm(forms.ModelForm):
-    class Meta:
-        model = UserProfile
-        fields = [
-            "theme",
-            "bookmark_date_display",
-            "bookmark_description_display",
-            "bookmark_description_max_lines",
-            "bookmark_link_target",
-            "web_archive_integration",
-            "tag_search",
-            "tag_grouping",
-            "enable_sharing",
-            "enable_public_sharing",
-            "enable_favicons",
-            "enable_preview_images",
-            "enable_automatic_html_snapshots",
-            "display_url",
-            "display_view_bookmark_action",
-            "display_edit_bookmark_action",
-            "display_archive_bookmark_action",
-            "display_remove_bookmark_action",
-            "permanent_notes",
-            "default_mark_unread",
-            "default_mark_shared",
-            "custom_css",
-            "auto_tagging_rules",
-            "items_per_page",
-            "sticky_pagination",
-            "collapse_side_panel",
-            "hide_bundles",
-            "legacy_search",
-        ]
-
-
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -640,14 +540,4 @@ class GlobalSettings(models.Model):
     def save(self, *args, **kwargs):
         if not self.pk and GlobalSettings.objects.exists():
             raise Exception("There is already one instance of GlobalSettings")
-        return super(GlobalSettings, self).save(*args, **kwargs)
-
-
-class GlobalSettingsForm(forms.ModelForm):
-    class Meta:
-        model = GlobalSettings
-        fields = ["landing_page", "guest_profile_user", "enable_link_prefetch"]
-
-    def __init__(self, *args, **kwargs):
-        super(GlobalSettingsForm, self).__init__(*args, **kwargs)
-        self.fields["guest_profile_user"].empty_label = "Standard profile"
+        return super().save(*args, **kwargs)

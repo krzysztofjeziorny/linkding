@@ -1,58 +1,50 @@
-{% load widget_tweaks %}
-
-<div class="form-group {% if form.name.errors %}has-error{% endif %}">
-  <label for="{{ form.name.id_for_label }}" class="form-label">Name</label>
-  {{ form.name|add_class:"form-input"|attr:"autocomplete:off"|attr:"placeholder: " }}
-  {% if form.name.errors %}
-    <div class="form-input-hint">
-      {{ form.name.errors }}
-    </div>
-  {% endif %}
+{% load shared %}
+<div class="form-group">
+  {% formlabel form.name "Name" %}
+  {% formfield form.name %}
+  {{ form.name.errors }}
 </div>
-
-<div class="form-group {% if form.search.errors %}has-error{% endif %}">
-  <label for="{{ form.search.id_for_label }}" class="form-label">Search terms</label>
-  {{ form.search|add_class:"form-input"|attr:"autocomplete:off"|attr:"placeholder: " }}
-  {% if form.search.errors %}
-    <div class="form-input-hint">
-      {{ form.search.errors }}
-    </div>
-  {% endif %}
-  <div class="form-input-hint">
+<div class="form-group">
+  {% formlabel form.search "Search terms" %}
+  {% formfield form.search has_help=True %}
+  {{ form.search.errors }}
+  {% formhelp form.search %}
     All of these search terms must be present in a bookmark to match.
-  </div>
+  {% endformhelp %}
 </div>
-
-<div class="form-group" ld-tag-autocomplete>
-  <label for="{{ form.any_tags.id_for_label }}" class="form-label">Tags</label>
-  {{ form.any_tags|add_class:"form-input"|attr:"autocomplete:off"|attr:"autocapitalize:off" }}
-  <div class="form-input-hint">
+<div class="form-group">
+  {% formlabel form.any_tags "Tags" %}
+  {% formfield form.any_tags has_help=True %}
+  {% formhelp form.any_tags %}
     At least one of these tags must be present in a bookmark to match.
-  </div>
+  {% endformhelp %}
 </div>
-
-<div class="form-group" ld-tag-autocomplete>
-  <label for="{{ form.all_tags.id_for_label }}" class="form-label">Required tags</label>
-  {{ form.all_tags|add_class:"form-input"|attr:"autocomplete:off"|attr:"autocapitalize:off" }}
-  <div class="form-input-hint">
+<div class="form-group">
+  {% formlabel form.all_tags "Required tags" %}
+  {% formfield form.all_tags has_help=True %}
+  {% formhelp form.all_tags %}
     All of these tags must be present in a bookmark to match.
-  </div>
+  {% endformhelp %}
 </div>
-
-<div class="form-group" ld-tag-autocomplete>
-  <label for="{{ form.excluded_tags.id_for_label }}" class="form-label">Excluded tags</label>
-  {{ form.excluded_tags|add_class:"form-input"|attr:"autocomplete:off"|attr:"autocapitalize:off" }}
-  <div class="form-input-hint">
+<div class="form-group">
+  {% formlabel form.excluded_tags "Excluded tags" %}
+  {% formfield form.excluded_tags has_help=True %}
+  {% formhelp form.excluded_tags %}
     None of these tags must be present in a bookmark to match.
-  </div>
+  {% endformhelp %}
 </div>
-
 <div class="form-footer d-flex mt-4">
-  <input type="submit" name="save" value="Save" class="btn btn-primary btn-wide">
-  <a href="{% url 'linkding:bundles.index' %}" class="btn btn-wide ml-auto">Cancel</a>
-  <a href="{% url 'linkding:bundles.preview' %}" data-turbo-frame="preview" class="d-none" id="preview-link"></a>
+  <input type="submit"
+         name="save"
+         value="Save"
+         class="btn btn-primary btn-wide">
+  <a href="{% url 'linkding:bundles.index' %}"
+     class="btn btn-wide ml-auto">Cancel</a>
+  <a href="{% url 'linkding:bundles.preview' %}"
+     data-turbo-frame="preview"
+     class="d-none"
+     id="preview-link"></a>
 </div>
-
 <script>
   (function init() {
     const bundleForm = document.getElementById('bundle-form');

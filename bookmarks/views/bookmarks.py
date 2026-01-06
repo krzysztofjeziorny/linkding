@@ -4,9 +4,9 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models import QuerySet
 from django.http import (
-    HttpResponseRedirect,
     HttpResponseBadRequest,
     HttpResponseForbidden,
+    HttpResponseRedirect,
 )
 from django.shortcuts import render
 from django.urls import reverse
@@ -17,25 +17,26 @@ from bookmarks.models import (
     Bookmark,
     BookmarkSearch,
 )
-from bookmarks.services import assets as asset_actions, tasks
+from bookmarks.services import assets as asset_actions
+from bookmarks.services import tasks
 from bookmarks.services.bookmarks import (
     archive_bookmark,
     archive_bookmarks,
-    unarchive_bookmark,
-    unarchive_bookmarks,
+    create_html_snapshots,
     delete_bookmarks,
-    tag_bookmarks,
-    untag_bookmarks,
     mark_bookmarks_as_read,
     mark_bookmarks_as_unread,
-    share_bookmarks,
-    unshare_bookmarks,
     refresh_bookmarks_metadata,
-    create_html_snapshots,
+    share_bookmarks,
+    tag_bookmarks,
+    unarchive_bookmark,
+    unarchive_bookmarks,
+    unshare_bookmarks,
+    untag_bookmarks,
 )
 from bookmarks.type_defs import HttpRequest
 from bookmarks.utils import get_safe_return_url
-from bookmarks.views import access, contexts, partials, turbo
+from bookmarks.views import access, contexts, turbo
 
 
 @login_required
@@ -55,7 +56,6 @@ def index(request: HttpRequest):
 
     return render_bookmarks_view(
         request,
-        "bookmarks/index.html",
         {
             "page_title": "Bookmarks - Linkding",
             "bookmark_list": bookmark_list,
@@ -64,6 +64,18 @@ def index(request: HttpRequest):
             "details": bookmark_details,
         },
     )
+
+
+def index_update(request: HttpRequest):
+    search = BookmarkSearch.from_request(
+        request, request.GET, request.user_profile.search_preferences
+    )
+    bookmark_list = contexts.ActiveBookmarkListContext(request, search)
+    tag_cloud = contexts.ActiveTagCloudContext(request, search)
+    details = contexts.get_details_context(
+        request, contexts.ActiveBookmarkDetailsContext
+    )
+    return render_bookmarks_update(request, bookmark_list, tag_cloud, details)
 
 
 @login_required
@@ -83,7 +95,6 @@ def archived(request: HttpRequest):
 
     return render_bookmarks_view(
         request,
-        "bookmarks/archive.html",
         {
             "page_title": "Archived bookmarks - Linkding",
             "bookmark_list": bookmark_list,
@@ -92,6 +103,18 @@ def archived(request: HttpRequest):
             "details": bookmark_details,
         },
     )
+
+
+def archived_update(request: HttpRequest):
+    search = BookmarkSearch.from_request(
+        request, request.GET, request.user_profile.search_preferences
+    )
+    bookmark_list = contexts.ArchivedBookmarkListContext(request, search)
+    tag_cloud = contexts.ArchivedTagCloudContext(request, search)
+    details = contexts.get_details_context(
+        request, contexts.ArchivedBookmarkDetailsContext
+    )
+    return render_bookmarks_update(request, bookmark_list, tag_cloud, details)
 
 
 def shared(request: HttpRequest):
@@ -106,39 +129,67 @@ def shared(request: HttpRequest):
     bookmark_details = contexts.get_details_context(
         request, contexts.SharedBookmarkDetailsContext
     )
-    public_only = not request.user.is_authenticated
-    users = queries.query_shared_bookmark_users(
-        request.user_profile, bookmark_list.search, public_only
-    )
+    user_list = contexts.UserListContext(request, search)
     return render_bookmarks_view(
         request,
-        "bookmarks/shared.html",
         {
             "page_title": "Shared bookmarks - Linkding",
             "bookmark_list": bookmark_list,
             "tag_cloud": tag_cloud,
             "details": bookmark_details,
-            "users": users,
+            "user_list": user_list,
             "rss_feed_url": reverse("linkding:feeds.public_shared"),
         },
     )
 
 
-def render_bookmarks_view(request: HttpRequest, template_name, context):
+def shared_update(request: HttpRequest):
+    search = BookmarkSearch.from_request(
+        request, request.GET, request.user_profile.search_preferences
+    )
+    bookmark_list = contexts.SharedBookmarkListContext(request, search)
+    tag_cloud = contexts.SharedTagCloudContext(request, search)
+    details = contexts.get_details_context(
+        request, contexts.SharedBookmarkDetailsContext
+    )
+    return render_bookmarks_update(request, bookmark_list, tag_cloud, details)
+
+
+def render_bookmarks_view(request: HttpRequest, context):
     if context["details"]:
         context["page_title"] = "Bookmark details - Linkding"
 
     if turbo.is_frame(request, "details-modal"):
-        return render(
-            request,
-            "bookmarks/updates/details-modal-frame.html",
-            context,
-        )
+        return turbo.frame(request, "bookmarks/details/modal.html", context)
 
     return render(
         request,
-        template_name,
+        "bookmarks/bookmark_page.html",
         context,
+    )
+
+
+def render_bookmarks_update(request, bookmark_list, tag_cloud, details):
+    return turbo.stream(
+        turbo.update(
+            request,
+            "bookmark-list-container",
+            "bookmarks/bookmark_list.html",
+            {"bookmark_list": bookmark_list},
+        ),
+        turbo.update(
+            request,
+            "tag-cloud-container",
+            "bookmarks/tag_cloud.html",
+            {"tag_cloud": tag_cloud},
+        ),
+        turbo.replace(
+            request,
+            "details-modal",
+            "bookmarks/details/modal.html",
+            {"details": details},
+            method="morph",
+        ),
     )
 
 
@@ -170,13 +221,12 @@ def convert_tag_string(tag_string: str):
 @login_required
 def new(request: HttpRequest):
     form = BookmarkForm(request)
-    if request.method == "POST":
-        if form.is_valid():
-            form.save()
-            if form.is_auto_close:
-                return HttpResponseRedirect(reverse("linkding:bookmarks.close"))
-            else:
-                return HttpResponseRedirect(reverse("linkding:bookmarks.index"))
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        if form.is_auto_close:
+            return HttpResponseRedirect(reverse("linkding:bookmarks.close"))
+        else:
+            return HttpResponseRedirect(reverse("linkding:bookmarks.index"))
 
     status = 422 if request.method == "POST" and not form.is_valid() else 200
     context = {"form": form, "return_url": reverse("linkding:bookmarks.index")}
@@ -192,10 +242,9 @@ def edit(request: HttpRequest, bookmark_id: int):
         request.GET.get("return_url"), reverse("linkding:bookmarks.index")
     )
 
-    if request.method == "POST":
-        if form.is_valid():
-            form.save()
-            return HttpResponseRedirect(return_url)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return HttpResponseRedirect(return_url)
 
     status = 422 if request.method == "POST" and not form.is_valid() else 200
     context = {"form": form, "bookmark_id": bookmark_id, "return_url": return_url}
@@ -272,7 +321,7 @@ def index_action(request: HttpRequest):
         return response
 
     if turbo.accept(request):
-        return partials.active_bookmark_update(request)
+        return index_update(request)
 
     return utils.redirect_with_query(request, reverse("linkding:bookmarks.index"))
 
@@ -289,7 +338,7 @@ def archived_action(request: HttpRequest):
         return response
 
     if turbo.accept(request):
-        return partials.archived_bookmark_update(request)
+        return archived_update(request)
 
     return utils.redirect_with_query(request, reverse("linkding:bookmarks.archived"))
 
@@ -304,7 +353,7 @@ def shared_action(request: HttpRequest):
         return response
 
     if turbo.accept(request):
-        return partials.shared_bookmark_update(request)
+        return shared_update(request)
 
     return utils.redirect_with_query(request, reverse("linkding:bookmarks.shared"))
 
@@ -347,29 +396,29 @@ def handle_action(request: HttpRequest, query: QuerySet[Bookmark] = None):
             # Use only selected bookmarks
             bookmark_ids = request.POST.getlist("bookmark_id")
 
-        if "bulk_archive" == bulk_action:
+        if bulk_action == "bulk_archive":
             return archive_bookmarks(bookmark_ids, request.user)
-        if "bulk_unarchive" == bulk_action:
+        if bulk_action == "bulk_unarchive":
             return unarchive_bookmarks(bookmark_ids, request.user)
-        if "bulk_delete" == bulk_action:
+        if bulk_action == "bulk_delete":
             return delete_bookmarks(bookmark_ids, request.user)
-        if "bulk_tag" == bulk_action:
+        if bulk_action == "bulk_tag":
             tag_string = convert_tag_string(request.POST["bulk_tag_string"])
             return tag_bookmarks(bookmark_ids, tag_string, request.user)
-        if "bulk_untag" == bulk_action:
+        if bulk_action == "bulk_untag":
             tag_string = convert_tag_string(request.POST["bulk_tag_string"])
             return untag_bookmarks(bookmark_ids, tag_string, request.user)
-        if "bulk_read" == bulk_action:
+        if bulk_action == "bulk_read":
             return mark_bookmarks_as_read(bookmark_ids, request.user)
-        if "bulk_unread" == bulk_action:
+        if bulk_action == "bulk_unread":
             return mark_bookmarks_as_unread(bookmark_ids, request.user)
-        if "bulk_share" == bulk_action:
+        if bulk_action == "bulk_share":
             return share_bookmarks(bookmark_ids, request.user)
-        if "bulk_unshare" == bulk_action:
+        if bulk_action == "bulk_unshare":
             return unshare_bookmarks(bookmark_ids, request.user)
-        if "bulk_refresh" == bulk_action:
+        if bulk_action == "bulk_refresh":
             return refresh_bookmarks_metadata(bookmark_ids, request.user)
-        if "bulk_snapshot" == bulk_action:
+        if bulk_action == "bulk_snapshot":
             return create_html_snapshots(bookmark_ids, request.user)
 
 
