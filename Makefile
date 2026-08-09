@@ -24,6 +24,9 @@ format:
 	npx prettier bookmarks/frontend --write
 	npx prettier bookmarks/styles --write
 
+install:
+	uv sync --no-dev --group postgres
+
 prepare-e2e:
 	uv run playwright install chromium
 	rm -rf static
