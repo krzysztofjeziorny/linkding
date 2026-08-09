@@ -5,24 +5,21 @@ description = "Self-hosted bookmark manager that is designed be to be minimal, f
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "beautifulsoup4>=4.14.3",
-    "bleach>=6.4.0",
-    "bleach-allowlist>=1.0.3",
-    "django>=6.0.6",
-    "djangorestframework>=3.16.1",
-    "huey>=2.5.5",
-    "markdown>=3.10",
-    "mozilla-django-oidc>=5.0.2",
-    "requests>=2.33.0",
     "beautifulsoup4>=4.15.0",
     "bleach>=6.4.0",
     "bleach-allowlist>=1.0.3",
-    "django~=6.0.6",
+    "markdown>=3.10.3",
+    "mozilla-django-oidc>=5.0.2",
+    "requests>=2.34.2",
+    "beautifulsoup4>=4.15.0",
+    "bleach>=6.4.0",
+    "bleach-allowlist>=1.0.3",
+    "django~=6.0.8",
     "django-environ>=0.14.0",
-    "djangorestframework>=3.17.1",
+    "djangorestframework>=3.18.0",
     "gunicorn>=26.0.0",
-    "huey>=3.0.3",
-    "markdown>=3.10.2",
+    "huey>=3.3.4",
+    "markdown>=3.10.3",
     "mozilla-django-oidc>=5.0.2",
     "psycopg[binary]>=3.3.4",
     "requests>=2.34.2",
@@ -33,14 +30,14 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "coverage>=7.14.3",
+    "coverage>=7.15.4",
     "django-debug-toolbar>=7.0.0",
-    "djlint>=1.39.5",
-    "playwright>=1.60.0",
+    "djlint>=1.39.7",
+    "playwright>=1.62.0",
     "pytest>=9.1.1",
-    "pytest-django>=4.12.0",
+    "pytest-django>=4.13.0",
     "pytest-xdist>=3.8.0",
-    "ruff>=0.15.20",
+    "ruff>=0.16.2",
 ]
 # For PostgreSQL support, use the binary release for development so that not
 # everyone needs to build from source. For production, use a separate dependency
