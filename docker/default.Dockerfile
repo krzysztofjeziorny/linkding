@@ -102,7 +102,10 @@ RUN apt-get install -y gnupg2 apt-transport-https ca-certificates && \
     echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
     apt-get update && apt-get install -y nodejs
 # install single-file-cli
-RUN npm install -g single-file-cli@2.0.75
+# pin transitive simple-cdp dependency, newer versions require Node >= 23 (CloseEvent global)
+# future note: Node 24 does not ship an arm/v7 build, drop latest-plus support for that platform at some point 
+RUN npm install -g single-file-cli@2.0.75 && \
+    npm install --prefix "$(npm root -g)/single-file-cli" simple-cdp@1.8.6
 # copy uBlock
 COPY --from=ublock-build /etc/linkding/uBOLite.chromium.mv3 uBOLite.chromium.mv3/
 # create chromium profile folder for user running background tasks and set permissions
