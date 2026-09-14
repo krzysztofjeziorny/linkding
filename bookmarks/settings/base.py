@@ -53,6 +53,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "bookmarks.middlewares.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -159,6 +160,12 @@ LD_DISABLE_URL_VALIDATION = os.getenv("LD_DISABLE_URL_VALIDATION", False) in (
     "1",
 )
 
+# Hosts that server-side requests may connect to even though they resolve to
+# non-public addresses (SSRF protection). Comma-separated list of hostnames,
+# IP addresses and CIDR ranges, or * to allow all hosts.
+# Parsed by bookmarks.services.http_client
+LD_ALLOWED_INTERNAL_HOSTS = os.getenv("LD_ALLOWED_INTERNAL_HOSTS", "")
+
 # Background task enabled setting
 LD_DISABLE_BACKGROUND_TASKS = os.getenv("LD_DISABLE_BACKGROUND_TASKS", False) in (
     True,
@@ -246,6 +253,9 @@ if LD_ENABLE_AUTH_PROXY:
 trusted_origins = os.getenv("LD_CSRF_TRUSTED_ORIGINS", "")
 if trusted_origins:
     CSRF_TRUSTED_ORIGINS = trusted_origins.split(",")
+
+# CORS allowed origins for the API, comma-separated
+LD_CORS_ALLOWED_ORIGINS = os.getenv("LD_CORS_ALLOWED_ORIGINS", "")
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases

@@ -1,6 +1,6 @@
 [project]
 name = "linkding"
-version = "1.46.2"
+version = "1.47.0"
 description = "Self-hosted bookmark manager that is designed be to be minimal, fast, and easy to set up using Docker."
 readme = "README.md"
 requires-python = ">=3.13"
@@ -76,6 +76,17 @@ select = [
     "SIM",
     # isort
     "I",
+    # flake8-tidy-imports: banned APIs
+    "TID251",
 ]
 # ignore line length violations
 ignore = ["E501"]
+
+# Outbound requests to user-supplied URLs must go through http_client, which
+# protects against SSRF
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"requests".msg = "Use bookmarks.services.http_client instead (SSRF protection)"
+
+[tool.ruff.lint.per-file-ignores]
+"bookmarks/tests/*" = ["TID251"]
+"bookmarks/tests_e2e/*" = ["TID251"]
