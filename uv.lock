@@ -528,7 +528,7 @@ requires-dist = [
     { name = "django-environ", specifier = ">=0.14.0" },
     { name = "djangorestframework", specifier = ">=3.18.3" },
     { name = "gunicorn", specifier = ">=26.2.0" },
-    { name = "huey", specifier = ">=3.4.0" },
+    { name = "huey", specifier = ">=3.5.3" },
     { name = "markdown", specifier = ">=3.11.2" },
     { name = "mozilla-django-oidc", specifier = ">=5.0.2" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.6" },
@@ -540,14 +540,14 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "coverage", specifier = ">=7.16.2" },
+    { name = "coverage", specifier = ">=7.17.0" },
     { name = "django-debug-toolbar", specifier = ">=8.0.0" },
-    { name = "djlint", specifier = ">=1.46.6" },
-    { name = "playwright", specifier = ">=1.64.0" },
-    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "djlint", specifier = ">=1.47.1" },
+    { name = "playwright", specifier = ">=1.64.1" },
+    { name = "pytest", specifier = ">=9.2.0" },
     { name = "pytest-django", specifier = ">=4.14.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.17.1" },
+    { name = "ruff", specifier = ">=0.17.3" },
 ]
 postgres = [{ name = "psycopg", specifier = ">=3.3.6" }]
 
